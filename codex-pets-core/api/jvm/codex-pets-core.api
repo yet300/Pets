@@ -5,6 +5,8 @@ public final class com/yet/pets/core/AtlasGeometry {
 	public final fun component4 ()I
 	public final fun component5 ()I
 	public final fun component6 ()I
+	public final fun copy (IIIIII)Lcom/yet/pets/core/AtlasGeometry;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/AtlasGeometry;IIIIIIILjava/lang/Object;)Lcom/yet/pets/core/AtlasGeometry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAtlasHeight ()I
 	public final fun getAtlasWidth ()I
@@ -341,6 +343,8 @@ public final class com/yet/pets/core/PlaybackKt {
 }
 
 public final class com/yet/pets/core/SpritesheetFormat : java/lang/Enum {
+	public static final field GIF Lcom/yet/pets/core/SpritesheetFormat;
+	public static final field JPEG Lcom/yet/pets/core/SpritesheetFormat;
 	public static final field PNG Lcom/yet/pets/core/SpritesheetFormat;
 	public static final field UNKNOWN Lcom/yet/pets/core/SpritesheetFormat;
 	public static final field WEBP Lcom/yet/pets/core/SpritesheetFormat;

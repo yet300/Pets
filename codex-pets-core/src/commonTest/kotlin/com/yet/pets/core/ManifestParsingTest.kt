@@ -196,4 +196,14 @@ class ManifestParsingTest {
         val outcome = PetPackageParser.parse("{}", "pet", SpritesheetInfo(1536, 1872, SpritesheetFormat.PNG))
         assertIs<PetParseOutcome.Success>(outcome)
     }
+
+    @Test
+    fun pinnedUpstreamFormatsAccepted() {
+        // Phase 2 additive correction: GIF + JPEG mirror the pinned TUI
+        // image-crate features (jpeg/png/gif/webp @ 55543d8).
+        for (format in listOf(SpritesheetFormat.GIF, SpritesheetFormat.JPEG)) {
+            val outcome = PetPackageParser.parse("{}", "pet", SpritesheetInfo(1536, 1872, format))
+            assertIs<PetParseOutcome.Success>(outcome, "format=$format")
+        }
+    }
 }

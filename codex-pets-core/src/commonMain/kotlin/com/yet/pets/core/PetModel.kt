@@ -3,12 +3,15 @@ package com.yet.pets.core
 /**
  * Image container formats relevant to Codex pets.
  *
- * PNG and WEBP mirror the pinned upstream TUI `image`-crate decoding scope
- * at `openai/codex @ 55543d8` (Phase 1 scope).
+ * PNG, WEBP, GIF, and JPEG mirror the pinned upstream TUI `image`-crate
+ * feature set (`jpeg`, `png`, `gif`, `webp` at `openai/codex @ 55543d8`).
+ * Added additively in Phase 2; no other core behavior changes.
  */
 public enum class SpritesheetFormat {
     PNG,
     WEBP,
+    GIF,
+    JPEG,
     UNKNOWN,
 }
 

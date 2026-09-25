@@ -23,7 +23,7 @@ No coroutines in core: there are no loaders in core (all I/O lives in
 |---|---|---|
 | Raw serialized manifest | `CodexPetManifest`, `FrameSpec`, `AnimationSpec` (`@Serializable`, unknown-field tolerant) | mirrors CLI `PetFile` 1:1, incl. `loop` rename |
 | Normalized runtime | `PetDefinition`, `PetAnimation`, `PetFrame`, `PetAnimationKey`, `AtlasGeometry` | CLI V1 profile only; no V2 types in v1 |
-| Loading | `PetLoader.loadPetDirectory/loadPetZip` | `io` module, okio `Path` |
+| Loading | `PetLoader.loadPetDirectory/loadPetZip` | `io` module; public boundary is `String`/`ByteArray` (Okio internal only) |
 | Runtime compatibility validation | `CodexCompatibilityValidator` → `PetCompatibilityReport` | pure core, reproduces machine-enforced CLI rules; used by loaders |
 | Authoring QA validation | `CodexAuthoringValidator` → `PetAuthoringReport` | hatch-pet QA recommendations; advisory only, never gates loading |
 | Compose | `PetPlayerState`, `rememberPetPlayerState`, `CodexPet()` | single atlas decode, region draws |
@@ -192,7 +192,13 @@ stable models + parsing/loading APIs.
 
 ```kotlin
 data class PetPackageLimits( /* defaults per §5.4 of ARCHITECTURE.md */ )
-fun loadPetDirectory(dir: Path, limits: PetPackageLimits = ...): PetLoadOutcome
+// Phase 2 Apple-interop amendment: the public directory boundary is String,
+// NOT okio Path. A framework probe proved OkioPath constructible from Swift
+// (via OkioPath.companion.toPath) but awkward, and a Path-typed overload would
+// leak Okio declarations into our framework header/ABI. Okio remains the only
+// filesystem implementation, used internally (FileSystem-injectable internal
+// overloads power FakeFileSystem tests).
+fun loadPetDirectory(path: String, limits: PetPackageLimits = ...): PetLoadOutcome
 fun loadPetZip(
     bytes: ByteArray,
     fallbackId: String = "pet",   // identity source when the archive is anonymous (see §4.1)

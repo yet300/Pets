@@ -30,6 +30,14 @@ jobs:
             os: ubuntu-latest
           - target: :codex-pets-core:checkKotlinAbi
             os: ubuntu-latest
+          - target: :codex-pets-io:iosSimulatorArm64Test
+            os: macos-latest
+          - target: :codex-pets-io:jvmTest
+            os: ubuntu-latest
+          - target: :codex-pets-io:assemble
+            os: ubuntu-latest
+          - target: :codex-pets-io:checkKotlinAbi
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
 
     steps:

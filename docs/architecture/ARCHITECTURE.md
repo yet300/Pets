@@ -70,9 +70,12 @@ The proposed layout is justified with one correction (network over io):
 - `core`: pure Kotlin, zero platform/UI/network deps. Dependencies allowed:
   Kotlin stdlib + `kotlinx-serialization-json` (manifest parsing) and nothing
   else unless implementation proves necessity. No coroutines — no loaders in core.
-- `io`: filesystem + ZIP package loading, both validation layers' enforcement
-  point for runtime rules. Depends on core + the single filesystem lib (§4).
-  No Ktor.
+- `io`: filesystem + ZIP package loading and runtime package-validation
+  enforcement point: it establishes filesystem/archive facts (discovery,
+  confinement, limits, image/package facts) and supplies them to core, which
+  remains the semantic compatibility authority. Depends on core + the single
+  filesystem lib (§4). No Ktor. Authoring pixel QA is deferred tooling and is
+  NOT part of io.
 - `network`: pet-oriented URL loading with exactly one v1 semantic — HTTPS URL
   → ZIP pet package → bounded download → io ZIP parser (`loadPetZipFromUrl`).
   Depends on **io** (and transitively core), so consumers that do not load from

@@ -115,7 +115,8 @@ public object PetPackageParser {
         if (spritesheet.width != CodexV1.ATLAS_WIDTH || spritesheet.height != CodexV1.ATLAS_HEIGHT) {
             errors += PetCompatibilityError.UnsupportedAtlasDimensions(spritesheet.width, spritesheet.height)
         }
-        if (spritesheet.format != SpritesheetFormat.PNG && spritesheet.format != SpritesheetFormat.WEBP
+        if (spritesheet.format != SpritesheetFormat.PNG && spritesheet.format != SpritesheetFormat.WEBP &&
+            spritesheet.format != SpritesheetFormat.GIF && spritesheet.format != SpritesheetFormat.JPEG
         ) {
             errors += PetCompatibilityError.UnsupportedSpritesheetFormat(spritesheet.format)
         }
@@ -315,7 +316,8 @@ public object CodexCompatibilityValidator {
                 spritesheet.height,
             )
         }
-        if (spritesheet.format != SpritesheetFormat.PNG && spritesheet.format != SpritesheetFormat.WEBP
+        if (spritesheet.format != SpritesheetFormat.PNG && spritesheet.format != SpritesheetFormat.WEBP &&
+            spritesheet.format != SpritesheetFormat.GIF && spritesheet.format != SpritesheetFormat.JPEG
         ) {
             errors += PetCompatibilityError.UnsupportedSpritesheetFormat(spritesheet.format)
         }
