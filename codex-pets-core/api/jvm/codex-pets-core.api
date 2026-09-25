@@ -1,0 +1,366 @@
+public final class com/yet/pets/core/AtlasGeometry {
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAtlasHeight ()I
+	public final fun getAtlasWidth ()I
+	public final fun getCellHeight ()I
+	public final fun getCellWidth ()I
+	public final fun getColumns ()I
+	public final fun getFrameCapacity ()J
+	public final fun getRows ()I
+	public fun hashCode ()I
+	public final fun sourceRectForOrNull (I)Lcom/yet/pets/core/IntRect;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/CodexCompatibilityValidator {
+	public static final field INSTANCE Lcom/yet/pets/core/CodexCompatibilityValidator;
+	public final fun validate (Lcom/yet/pets/core/PetDefinition;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetCompatibilityReport;
+}
+
+public final class com/yet/pets/core/IdentityKt {
+	public static final fun normalizePetIdentity (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/yet/pets/core/PetIdentity;
+}
+
+public final class com/yet/pets/core/IntRect {
+	public fun <init> (IIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (IIII)Lcom/yet/pets/core/IntRect;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/IntRect;IIIIILjava/lang/Object;)Lcom/yet/pets/core/IntRect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeight ()I
+	public final fun getLeft ()I
+	public final fun getTop ()I
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetAnimation {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFallback ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getFrames ()Ljava/util/List;
+	public final fun getLoopStart ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetAnimationKey {
+	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetAnimations {
+	public static final field INSTANCE Lcom/yet/pets/core/PetAnimations;
+	public final fun getBounce ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getFailed ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getIdle ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getJumping ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getMoveLeft ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getMoveRight ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getReview ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getRunning ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getRunningLeft ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getRunningRight ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getSad ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getWaiting ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getWave ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getWaving ()Lcom/yet/pets/core/PetAnimationKey;
+}
+
+public abstract interface class com/yet/pets/core/PetCompatibilityError {
+	public abstract fun getMessage ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$EmptyAnimationFrames : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$EmptyAnimationFrames;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$EmptyAnimationFrames;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$EmptyAnimationFrames;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimation ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$FrameCountExceeded : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (JI)V
+	public final fun component1 ()J
+	public final fun component2 ()I
+	public final fun copy (JI)Lcom/yet/pets/core/PetCompatibilityError$FrameCountExceeded;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$FrameCountExceeded;JIILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$FrameCountExceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()J
+	public final fun getMaximum ()I
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$InvalidFps : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;D)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()D
+	public final fun copy (Ljava/lang/String;D)Lcom/yet/pets/core/PetCompatibilityError$InvalidFps;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$InvalidFps;Ljava/lang/String;DILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$InvalidFps;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimation ()Ljava/lang/String;
+	public final fun getFps ()D
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$InvalidFrameGrid : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$InvalidFrameGrid;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$InvalidFrameGrid;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$InvalidFrameGrid;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$MalformedManifest : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$MalformedManifest;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$MalformedManifest;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$MalformedManifest;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$NormalizationFailed : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$NormalizationFailed;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$NormalizationFailed;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$NormalizationFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$SpriteIndexOutOfRange : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;II)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (Ljava/lang/String;II)Lcom/yet/pets/core/PetCompatibilityError$SpriteIndexOutOfRange;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$SpriteIndexOutOfRange;Ljava/lang/String;IIILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$SpriteIndexOutOfRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimation ()Ljava/lang/String;
+	public final fun getFrameCount ()I
+	public final fun getIndex ()I
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$UnknownFallback : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$UnknownFallback;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$UnknownFallback;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$UnknownFallback;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimation ()Ljava/lang/String;
+	public final fun getFallback ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$UnsupportedAtlasDimensions : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lcom/yet/pets/core/PetCompatibilityError$UnsupportedAtlasDimensions;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$UnsupportedAtlasDimensions;IIILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$UnsupportedAtlasDimensions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeight ()I
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$UnsupportedSpritesheetFormat : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Lcom/yet/pets/core/SpritesheetFormat;)V
+	public final fun component1 ()Lcom/yet/pets/core/SpritesheetFormat;
+	public final fun copy (Lcom/yet/pets/core/SpritesheetFormat;)Lcom/yet/pets/core/PetCompatibilityError$UnsupportedSpritesheetFormat;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$UnsupportedSpritesheetFormat;Lcom/yet/pets/core/SpritesheetFormat;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$UnsupportedSpritesheetFormat;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFormat ()Lcom/yet/pets/core/SpritesheetFormat;
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityReport {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getWarnings ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isCompatible ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetDefinition {
+	public final fun animation (Lcom/yet/pets/core/PetAnimationKey;)Lcom/yet/pets/core/PetAnimation;
+	public final fun animation (Ljava/lang/String;)Lcom/yet/pets/core/PetAnimation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimationKeys ()Ljava/util/List;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getDisplayName ()Ljava/lang/String;
+	public final fun getFrameCount ()I
+	public final fun getGeometry ()Lcom/yet/pets/core/AtlasGeometry;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetFrame {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationNanos ()J
+	public final fun getSpriteIndex ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetIdentity {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/yet/pets/core/PetIdentity;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetIdentity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetIdentity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getDisplayName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetPackageParser {
+	public static final field INSTANCE Lcom/yet/pets/core/PetPackageParser;
+	public final fun parse (Ljava/lang/String;Ljava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetParseOutcome;
+	public final fun parse ([BLjava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetParseOutcome;
+	public final fun spritesheetPathOf (Ljava/lang/String;)Lcom/yet/pets/core/PetSpritesheetPathOutcome;
+	public final fun spritesheetPathOf ([B)Lcom/yet/pets/core/PetSpritesheetPathOutcome;
+}
+
+public abstract interface class com/yet/pets/core/PetParseOutcome {
+}
+
+public final class com/yet/pets/core/PetParseOutcome$Failure : com/yet/pets/core/PetParseOutcome {
+	public fun <init> (Lcom/yet/pets/core/PetCompatibilityReport;)V
+	public final fun component1 ()Lcom/yet/pets/core/PetCompatibilityReport;
+	public final fun copy (Lcom/yet/pets/core/PetCompatibilityReport;)Lcom/yet/pets/core/PetParseOutcome$Failure;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetParseOutcome$Failure;Lcom/yet/pets/core/PetCompatibilityReport;ILjava/lang/Object;)Lcom/yet/pets/core/PetParseOutcome$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReport ()Lcom/yet/pets/core/PetCompatibilityReport;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetParseOutcome$Success : com/yet/pets/core/PetParseOutcome {
+	public fun <init> (Lcom/yet/pets/core/PetDefinition;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/yet/pets/core/PetDefinition;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/yet/pets/core/PetDefinition;Ljava/lang/String;)Lcom/yet/pets/core/PetParseOutcome$Success;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetParseOutcome$Success;Lcom/yet/pets/core/PetDefinition;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetParseOutcome$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefinition ()Lcom/yet/pets/core/PetDefinition;
+	public final fun getSpritesheetPath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetPlaybackSample {
+	public fun <init> (Lcom/yet/pets/core/PetAnimationKey;ILjava/lang/Long;)V
+	public final fun component1 ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun copy (Lcom/yet/pets/core/PetAnimationKey;ILjava/lang/Long;)Lcom/yet/pets/core/PetPlaybackSample;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetPlaybackSample;Lcom/yet/pets/core/PetAnimationKey;ILjava/lang/Long;ILjava/lang/Object;)Lcom/yet/pets/core/PetPlaybackSample;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnimation ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getNextFrameInNanos ()Ljava/lang/Long;
+	public final fun getSpriteIndex ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/yet/pets/core/PetSpritesheetPathOutcome {
+}
+
+public final class com/yet/pets/core/PetSpritesheetPathOutcome$Failure : com/yet/pets/core/PetSpritesheetPathOutcome {
+	public fun <init> (Lcom/yet/pets/core/PetCompatibilityError;)V
+	public final fun component1 ()Lcom/yet/pets/core/PetCompatibilityError;
+	public final fun copy (Lcom/yet/pets/core/PetCompatibilityError;)Lcom/yet/pets/core/PetSpritesheetPathOutcome$Failure;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetSpritesheetPathOutcome$Failure;Lcom/yet/pets/core/PetCompatibilityError;ILjava/lang/Object;)Lcom/yet/pets/core/PetSpritesheetPathOutcome$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/yet/pets/core/PetCompatibilityError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetSpritesheetPathOutcome$Success : com/yet/pets/core/PetSpritesheetPathOutcome {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetSpritesheetPathOutcome$Success;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetSpritesheetPathOutcome$Success;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetSpritesheetPathOutcome$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PlaybackKt {
+	public static final fun samplePetAnimation (Lcom/yet/pets/core/PetDefinition;Lcom/yet/pets/core/PetAnimationKey;J)Lcom/yet/pets/core/PetPlaybackSample;
+	public static final fun staticIdleSpriteIndex (Lcom/yet/pets/core/PetDefinition;)I
+}
+
+public final class com/yet/pets/core/SpritesheetFormat : java/lang/Enum {
+	public static final field PNG Lcom/yet/pets/core/SpritesheetFormat;
+	public static final field UNKNOWN Lcom/yet/pets/core/SpritesheetFormat;
+	public static final field WEBP Lcom/yet/pets/core/SpritesheetFormat;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/yet/pets/core/SpritesheetFormat;
+	public static fun values ()[Lcom/yet/pets/core/SpritesheetFormat;
+}
+
+public final class com/yet/pets/core/SpritesheetInfo {
+	public fun <init> (IILcom/yet/pets/core/SpritesheetFormat;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Lcom/yet/pets/core/SpritesheetFormat;
+	public final fun copy (IILcom/yet/pets/core/SpritesheetFormat;)Lcom/yet/pets/core/SpritesheetInfo;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/SpritesheetInfo;IILcom/yet/pets/core/SpritesheetFormat;ILjava/lang/Object;)Lcom/yet/pets/core/SpritesheetInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFormat ()Lcom/yet/pets/core/SpritesheetFormat;
+	public final fun getHeight ()I
+	public final fun getWidth ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

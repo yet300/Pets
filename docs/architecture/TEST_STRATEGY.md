@@ -1,5 +1,12 @@
 # Test Strategy (designed before implementation)
 
+> **Phase 1 Apple Interop Amendment.** Public time is explicitly named nanos
+> `Long` (public `kotlin.time.Duration` is forbidden — it exports its packed
+> `rawValue`); `PetAnimationKey` is a regular class; behavior tests use the
+> interop-safe `animationKeys`/`animation()` API and never depend on a public
+> map; playback goldens assert literal nanoseconds and saturated-`Long` policy
+> equivalents.
+
 ## 1. Principles
 
 - No proprietary assets: never vendor OpenAI CDN spritesheets or community pets.
@@ -42,12 +49,19 @@ non-covering grid reject; zero dims reject; count > 256 reject; unknown fields
 ignored **silently by default** (incl. `spriteVersionNumber` passthrough — no
 unknown-key tracking, assert absence of diagnostics plumbing, not presence).
 Atlas/grid: wrong dims reject; non-covering `frame` reject.
-Compatibility profile: CLI default table exact (indices + `Duration`s +
+Compatibility profile: CLI default table exact (indices + literal nanos +
 `loopStart` 3x-settle rule + aliases); custom `animations` merge/override;
 `idle` auto-insert.
 Custom animations: arbitrary names; `fps` default 8.0; `loop=false` → hold +
 single-hop fallback; fallback references validated for existence only (no chain
-traversal — see §3c).
+traversal — see §3c); fallback exact-empty→idle with whitespace literal
+(`""`→idle; `" "`/`"   "`/`" idle "`→`UnknownFallback`); alias override;
+reverse-order forward refs; custom idle override; fps taxonomy pinned at both
+JSON level (non-numeric/overflowing literals→`MalformedManifest`) and Double
+level (`fpsToDurationNanos`: NaN/±Inf/zero/negative/>60/subnormal/smallest-normal
+→null); numeric DTO taxonomy pinned (negative dims/indices→semantic errors,
+>Int.MAX_VALUE→`MalformedManifest`); interop-safe lookup tests
+(`animationKeys` sorted, `animation(key)`/`animation(name)`).
 Invalid inputs: empty `frames`; index ≥ frame_count; dangling fallback;
 fps ∈ {NaN, ≤0, >60, infinite}; `spritesheetPath` ∈ {absolute, `..`, drive
 prefix, empty→default}; missing pet.json/avatar.json; missing spritesheet;
@@ -80,12 +94,13 @@ unused cell; RGB residue; opaque atlas; near-opaque cell; canonical row
 occupancy mismatch. No authoring types appear in any Phase 1/2 load-path
 signature.
 
-### 3c. Playback (`samplePetAnimation`, `Duration`-based) — Codex animation-model parity with deterministic host scheduling
+### 3c. Playback (`samplePetAnimation`, nanos-based) — Codex animation-model parity with deterministic host scheduling
 
-Selection/frame semantics match the reference; `nextFrameIn` scheduling is our
+Selection/frame semantics match the reference; `nextFrameInNanos` scheduling is our
 deterministic improvement (§2.2 of the API proposal), never claimed as TUI
-scheduler parity. All durations asserted as `Duration` (built-in ms constants
-via `.milliseconds`; custom fps via `1.0/fps` seconds — never integer-ms fields):
+scheduler parity. All durations asserted as literal nanoseconds (built-in ms
+constants × 1_000_000; custom fps via `(1.0/fps)` seconds converted to whole
+nanoseconds — never integer-ms fields, never public Duration):
 
 - Normal frame progression across row boundaries with per-frame durations incl.
   the long final frame.
@@ -99,13 +114,13 @@ via `.milliseconds`; custom fps via `1.0/fps` seconds — never integer-ms field
   B non-looping and elapsed far beyond BOTH durations still selects **B at the
   same elapsed time** — assert NOT C. Fallback cycles need no traversal tests
   beyond existence validation.
-- Non-looping multi-frame: holds last frame pre-hop; post-hop `nextFrameIn`
+- Non-looping multi-frame: holds last frame pre-hop; post-hop `nextFrameInNanos`
   follows the evaluated animation.
-- Single-frame one-shot (deliberate improvement): pre-completion `nextFrameIn`
+- Single-frame one-shot (deliberate improvement): pre-completion `nextFrameInNanos`
   equals remaining time to the fallback transition (TUI would schedule nothing);
   post-completion the normal single hop applies.
 - Elapsed substantially beyond the transition (e.g. 10x total duration).
-- Single-frame looping: static sample, `nextFrameIn == null`.
+- Single-frame looping: static sample, `nextFrameInNanos == null`.
 - Unknown requested key → idle evaluation (assert `sample.animation == Idle`).
 - High-precision accumulation: 60 FPS custom animation (16.666…ms frames) and
   59.94 FPS (≈16.683ms frames) over many cycles — assert no drift from

@@ -5,8 +5,17 @@ Module split: `core` (pure) · `io` (okio) · `network` (Ktor, optional, over io
 `explicitApi()` strict from Phase 1. No `ImageBitmap` outside `compose`/`desktop`.
 
 Core dependency budget: Kotlin stdlib + `kotlinx-serialization-json` only.
-`kotlin.time.Duration` ships with Kotlin — no extra dependency. No coroutines in
-core: there are no loaders in core (all I/O lives in `io`/`network`).
+No coroutines in core: there are no loaders in core (all I/O lives in
+`io`/`network`).
+
+> **Phase 1 Apple Interop Amendment.** Empirical Apple-interop results changed
+> the public representation (not the upstream contract): public
+> `kotlin.time.Duration` is forbidden (it exports its packed `rawValue`, not
+> nanoseconds) — all public time is explicitly named nanos `Long`; the
+> value-class `PetAnimationKey` became a regular class; the public animation
+> `Map` became an interop-safe lookup API; invariant-heavy constructors are
+> internal. `kotlin.time.Duration` remains usable internally only and never
+> appears in public signatures.
 
 ## 1. Layer separation
 
@@ -14,40 +23,31 @@ core: there are no loaders in core (all I/O lives in `io`/`network`).
 |---|---|---|
 | Raw serialized manifest | `CodexPetManifest`, `FrameSpec`, `AnimationSpec` (`@Serializable`, unknown-field tolerant) | mirrors CLI `PetFile` 1:1, incl. `loop` rename |
 | Normalized runtime | `PetDefinition`, `PetAnimation`, `PetFrame`, `PetAnimationKey`, `AtlasGeometry` | CLI V1 profile only; no V2 types in v1 |
-| Loading | `loadPetDirectory/loadPetZip/parsePetPackage` | `io` module, okio `Path` |
+| Loading | `PetLoader.loadPetDirectory/loadPetZip` | `io` module, okio `Path` |
 | Runtime compatibility validation | `CodexCompatibilityValidator` → `PetCompatibilityReport` | pure core, reproduces machine-enforced CLI rules; used by loaders |
 | Authoring QA validation | `CodexAuthoringValidator` → `PetAuthoringReport` | hatch-pet QA recommendations; advisory only, never gates loading |
 | Compose | `PetPlayerState`, `rememberPetPlayerState`, `CodexPet()` | single atlas decode, region draws |
 | Desktop | `PetOverlayWindow`, drag/placement helpers | thin over compose |
 
-## 2. Core API (sketch — names provisional until API review)
+## 2. Core API (implemented in Phase 1)
 
 ```kotlin
-@JvmInline value class PetAnimationKey(val value: String)
+// Regular immutable class: natural Swift type, constructor, and value equality.
+// Arbitrary names accepted without validation.
+class PetAnimationKey(val value: String)
 
 object PetAnimations {
     val Idle = PetAnimationKey("idle")
-    val RunningRight = PetAnimationKey("running-right")
-    val RunningLeft = PetAnimationKey("running-left")
-    val Waving = PetAnimationKey("waving")
-    val Jumping = PetAnimationKey("jumping")
-    val Failed = PetAnimationKey("failed")
-    val Waiting = PetAnimationKey("waiting")
-    val Running = PetAnimationKey("running")
-    val Review = PetAnimationKey("review")
-    // CLI aliases, kept for parity:
-    val MoveRight = PetAnimationKey("move_right")
-    val MoveLeft = PetAnimationKey("move_left")
-    val Wave = PetAnimationKey("wave")
-    val Bounce = PetAnimationKey("bounce")
-    val Sad = PetAnimationKey("sad")
+    // ... RunningRight/Left, Waving, Jumping, Failed, Waiting, Running, Review,
+    // plus CLI aliases MoveRight/MoveLeft/Wave/Bounce/Sad
 }
 
-data class AtlasGeometry(
+data class AtlasGeometry internal constructor(
     val atlasWidth: Int, val atlasHeight: Int,
     val columns: Int, val rows: Int,
     val cellWidth: Int, val cellHeight: Int,
 ) {
+    val frameCapacity: Long
     // Safe public geometry: null for out-of-range indices. Deterministic and
     // documented; public callers never get an exception or silent wrap.
     fun sourceRectForOrNull(spriteIndex: Int): IntRect?
@@ -60,41 +60,47 @@ data class IntRect(val left: Int, val top: Int, val width: Int, val height: Int)
 // sourceRectForOrNull, no null branch). Not public API.
 internal fun AtlasGeometry.sourceRectFor(spriteIndex: Int): IntRect
 
-data class PetFrame(
+class PetFrame internal constructor(
     val spriteIndex: Int,
-    val duration: Duration,   // kotlin.time.Duration; converted from ms constants via .milliseconds
+    val durationNanos: Long,   // explicit nanos; internal Duration math only
 )
 
-data class PetAnimation(
-    val frames: List<PetFrame>,
+class PetAnimation internal constructor(
+    frames: List<PetFrame>,
     val loopStart: Int?,              // null = one-shot, then hold + fallback (CLI parity)
     val fallback: PetAnimationKey,    // default Idle
-)
+) {
+    val frames: List<PetFrame>  // defensive snapshot
+}
 
 // Normalized runtime data ONLY. No diagnostics: parse/load/validation warnings
 // live in PetCompatibilityReport / PetAuthoringReport / PetLoadOutcome, never here.
-data class PetDefinition(
+// No public animation map: the lookup below is the interop-safe surface.
+class PetDefinition internal constructor(
     val id: String, val displayName: String, val description: String,
     val geometry: AtlasGeometry,
     val frameCount: Int,
-    val animations: Map<PetAnimationKey, PetAnimation>, // custom names allowed; idle guaranteed
-)
+    animations: Map<PetAnimationKey, PetAnimation>, // internal; snapshotted
+) {
+    val animationKeys: List<PetAnimationKey>  // sorted by key value (deterministic)
+    fun animation(key: PetAnimationKey): PetAnimation?
+    fun animation(name: String): PetAnimation?
+}
 
 // Pure player: Codex animation-model parity with deterministic host scheduling
 // (see §2.1). Resolves requested key (unknown -> idle), evaluates prefix/loop
 // sections, performs AT MOST ONE fallback hop, and reports both the current
-// sprite and the time until the next frame change.
+// sprite and the nanos until the next frame change.
 data class PetPlaybackSample(
     val animation: PetAnimationKey,  // the animation actually evaluated (post-hop)
     val spriteIndex: Int,
-    val nextFrameIn: Duration?,      // null = static (completed one-shot w/o further transition)
+    val nextFrameInNanos: Long?,     // null = static; never negative
 )
 
 fun samplePetAnimation(
     definition: PetDefinition,
     requestedAnimation: PetAnimationKey,
-    elapsed: Duration,               // measured from animation start; fallback is evaluated
-                                     // with this SAME clock (CLI ambient.rs parity — see §2.1)
+    elapsedNanos: Long,              // literal nanoseconds; <= 0 coerces to zero
 ): PetPlaybackSample
 
 // Reduced-motion / static preview: first idle frame, no timer. Belongs in core
@@ -140,14 +146,14 @@ schedules its own fallback wake-up in the TUI host. That is a host scheduling
 quirk, and we deliberately do NOT copy it:
 
 - If a non-looping single-frame animation has not yet reached its duration,
-  `nextFrameIn` is the remaining time until its fallback transition.
+  `nextFrameInNanos` is the remaining time until its fallback transition.
 - Once elapsed ≥ total duration, the normal single fallback hop applies.
-- Post-hop, `nextFrameIn` follows the evaluated animation (null only when the
+- Post-hop, `nextFrameInNanos` follows the evaluated animation (null only when the
   resulting state is itself static).
 
 Wording rule for docs/tests: **"Codex animation-model parity with deterministic
 host scheduling"** — selection/frame semantics match the reference; scheduling
-(`nextFrameIn`) is our deterministic improvement.
+(`nextFrameInNanos`) is our deterministic improvement.
 
 ## 3. `Result` policy — do NOT use Kotlin `Result` in public API
 
@@ -192,9 +198,13 @@ fun loadPetZip(
     fallbackId: String = "pet",   // identity source when the archive is anonymous (see §4.1)
     limits: PetPackageLimits = ...,
 ): PetLoadOutcome
-// Internal parse step: manifest bytes + encoded sheet bytes + caller-resolved identity
-// + io-supplied dimension/format facts -> core compatibility validation.
-internal fun parsePetPackage(...): PetLoadOutcome
+// Core parsing facade (implemented in Phase 1 as PetPackageParser; raw DTOs stay internal):
+// - spritesheetPathOf(manifestJson|Bytes): PetSpritesheetPathOutcome — effective path
+//   (trimmed value or "spritesheet.webp"); no path safety checks (io's job).
+// - parse(manifestJson|Bytes, fallbackId, spritesheet: SpritesheetInfo): PetParseOutcome —
+//   Success(definition, spritesheetPath) or Failure(PetCompatibilityReport).
+// Standalone re-check: CodexCompatibilityValidator.validate(definition, spritesheet).
+// normalizePetIdentity(manifestId, displayName, description, fallbackId): PetIdentity.
 // IO-OWNED (lives in :codex-pets-io, never in core): decodes image bytes into facts.
 interface SpritesheetInfoProbe { fun probe(bytes: ByteArray): SpritesheetInfo }
 ```

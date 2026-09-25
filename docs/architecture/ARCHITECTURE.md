@@ -4,23 +4,33 @@ Phase 0 architecture for the Kotlin Multiplatform Codex-pets library.
 Normative compatibility input: `docs/research/CODEX_COMPATIBILITY.md`.
 No production code is written in this phase.
 
+> **Phase 1 Apple Interop Amendment.** Empirical Apple-interop results changed
+> the public representation (not the upstream contract, which is unchanged):
+> public `kotlin.time.Duration` is forbidden (it exports its packed `rawValue`,
+> not nanoseconds) — public time is explicitly named nanos `Long`;
+> value-class `PetAnimationKey` is a regular class; the public animation `Map`
+> is an interop-safe `animationKeys`/`animation()` lookup; invariant-heavy
+> constructors are internal so no natural Swift path can SIGABRT.
+> `kotlin.time.Duration` remains usable for internal computation only.
+
 ## 1. Guiding invariants (acceptance-gate derived)
 
 1. Core is pure Kotlin: no Compose, no `ImageBitmap`, no Ktor, no desktop APIs,
    no Android `Context`, no AWT. No decoded platform images in core domain models.
    Core dependencies: Kotlin stdlib + `kotlinx-serialization-json` only — no
    coroutines (there are no loaders in core).
-2. Frames are metadata over a single atlas (sprite index + `Duration` + loop/
-   fallback); geometry has one source of truth (`AtlasGeometry.sourceRectFor`),
-   never a stored `sourceRect` beside `spriteIndex`, never eagerly sliced
-   `ImageBitmap`s.
+2. Frames are metadata over a single atlas (sprite index + nanos duration +
+   loop/fallback); geometry has one source of truth
+   (`AtlasGeometry.sourceRectForOrNull`), never a stored `sourceRect` beside
+   `spriteIndex`, never eagerly sliced `ImageBitmap`s.
 3. Animation names are open: `PetAnimationKey(value: String)` with typed constants
    for known Codex states. No speculative V2/look-direction types in v1 public API.
 4. Networking is optional and isolated (`core <- io <- network`); consumers that
    do not load from URL never see Ktor.
 5. Exactly one filesystem abstraction across all targets (see §4).
-6. Timing is per-frame `kotlin.time.Duration` (CLI `model.rs` model, nanosecond
-   playback math), never integer-millisecond fields in normalized playback.
+6. Timing is per-frame nanoseconds as explicitly named `Long` values (CLI
+   `model.rs` model, nanosecond playback math), never integer-millisecond fields
+   and never public `kotlin.time.Duration` in normalized playback.
 7. Runtime compatibility (CLI machine rules) and authoring QA (hatch-pet
    recommendations) are separate validation layers; authoring quality can never
    fail normal package loading.
@@ -34,15 +44,15 @@ Raw package (dir | zip | url-zip)
   -> normalized Pet definition      (core: PetDefinition, pure data + geometry, no diagnostics)
   -> asset loader                   (io: confinement incl. symlinks, limits, spritesheet info probe)
   -> platform image decoder         (compose/desktop: ONE atlas ImageBitmap)
-  -> renderer                       (compose: drawImage subregions; Duration-based timing in common code)
+  -> renderer                       (compose: drawImage subregions; nanos-based timing in common code)
 ```
 
 The timing/loop/fallback player (equivalent of CLI `ambient.rs`
 `current_animation_frame` + `loop_start` semantics) lives in **core** as the pure
-`samplePetAnimation(definition, requested, elapsed: Duration): PetPlaybackSample`,
+`samplePetAnimation(definition, requested, elapsedNanos: Long): PetPlaybackSample`,
 operating only on metadata. Fallback is AT MOST ONE hop evaluated with the same
 animation-start clock (CLI parity, see PUBLIC_API_PROPOSAL.md §2.1); scheduling
-(`nextFrameIn`) is our deterministic improvement (§2.2). Diagnostics live in
+(`nextFrameInNanos`) is our deterministic improvement (§2.2). Diagnostics live in
 `PetCompatibilityReport` / `PetAuthoringReport` / `PetLoadOutcome`, never in
 `PetDefinition`. Platform layers map the resulting sprite index to a source
 rectangle via `AtlasGeometry.sourceRectForOrNull`.
@@ -255,9 +265,19 @@ profileFor(spritesheetInfo): CodexProfile   // keyed by decoded DIMENSIONS
   version-number semantics. Future V2 support activates only with a first-party
   contract. The open `PetAnimationKey` model already covers future names without
   breaking changes.
-- Per-animation `fallback`, `loopStart`, per-frame `Duration`s, and the 3x-play-
+- Per-animation `fallback`, `loopStart`, per-frame nanos durations, and the 3x-play-
   then-settle rule are modeled in the normalized form so any future profile maps
   onto the same player.
+
+### 7.1 Phase 2 decision item: `custom:` cache identity (recorded, not resolved)
+
+Upstream `Pet::load_with_codex_home("custom:<id>")` uses cache identity
+`"custom-<id>"` and ignores the manifest `id` on that loader path, while the
+pure core normalizer is intentionally `manifestId ?: fallbackId`. Phase 2 must
+decide explicitly whether `custom:` selector support reproduces the upstream
+cache-id behavior or deliberately separates package identity from cache
+identity — with rationale either way. No `CODEX_HOME` or `custom:` behavior
+exists in Phase 1, and this contradiction must not be silently resolved later.
 
 ## 8. Platform support matrix (v1 = explicit, not "all KMP targets")
 
