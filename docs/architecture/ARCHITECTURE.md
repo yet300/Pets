@@ -111,10 +111,15 @@ Decision: **Okio** in `:codex-pets-io` only. Core takes only `ByteArray`s,
 `String`s, and plain `SpritesheetInfo(width, height, format)` data values so it
 never touches files or decoders (this also makes core unit-testable in
 `commonTest` without image codecs). Ownership is one-directional: **io owns the
-`SpritesheetInfoProbe` abstraction, produces `SpritesheetInfo` facts from bytes,
-and passes those pure facts into core validation — core never depends on the
-probe itself.** No `java.io`, no `PlatformContext`, no raw `String`-path
-plumbing in public APIs — public io APIs accept/return `okio.Path`.
+internal image probe, produces `SpritesheetInfo` facts from bytes, and passes
+those pure facts into core validation — core never depends on the probe
+itself.** No `java.io`, no `PlatformContext` in public APIs. Canonical
+contract: the **public boundary is `String` paths** (`PetLoader.loadPetDirectory(path:
+String, …)`); the **internal filesystem abstraction is Okio `Path`/`FileSystem`
+only**. A public Okio `Path` was empirically rejected after the Apple interop
+preflight (constructible but awkward via `OkioPath.companion.toPath`, and it
+would leak Okio declarations into our framework header/ABI). Do NOT reintroduce
+public Okio Path for Kotlin aesthetics.
 
 ## 5. Package loading and ZIP design (io module)
 

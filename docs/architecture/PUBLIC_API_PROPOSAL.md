@@ -167,10 +167,12 @@ sealed interface PetLoadOutcome {
     // Encoded spritesheet bytes at the handoff (bounded by the 8 MiB sheet limit).
     // No cross-module asset abstraction: compose decodes these into exactly one
     // ImageBitmap and must NOT depend on io. No Okio types in core or compose.
-    data class Success(val definition: PetDefinition, val spritesheetBytes: ByteArray) : PetLoadOutcome
-    data class Failure(val errors: List<PetLoadError>) : PetLoadOutcome
+    // Success/Failure are classes (not data classes): Success carries a ByteArray
+    // with content-based equality, and neither exposes copy/componentN surface.
+    class Success(val definition: PetDefinition, val spritesheetBytes: ByteArray) : PetLoadOutcome
+    class Failure(val errors: List<PetLoadError>) : PetLoadOutcome  // snapshotted
 }
-sealed interface PetLoadError { data class MissingManifest(...); data class BadDimensions(...);
+sealed interface PetLoadError { data class MissingManifest(...); data class DanglingManifest(...);
     data class PathEscape(...); data class AmbiguousPackage(...); data class LimitExceeded(...); ... }
 ```
 
@@ -211,8 +213,9 @@ fun loadPetZip(
 //   Success(definition, spritesheetPath) or Failure(PetCompatibilityReport).
 // Standalone re-check: CodexCompatibilityValidator.validate(definition, spritesheet).
 // normalizePetIdentity(manifestId, displayName, description, fallbackId): PetIdentity.
-// IO-OWNED (lives in :codex-pets-io, never in core): decodes image bytes into facts.
-interface SpritesheetInfoProbe { fun probe(bytes: ByteArray): SpritesheetInfo }
+// IO-OWNED (lives in :codex-pets-io, never in core): the metadata probe is an
+// INTERNAL header-only parser (internal.image.ImageProbe) with no public probe
+// interface — there is no cross-module decoder abstraction to stabilize.
 ```
 
 ### 4.1 Deterministic identity normalization (v1)
