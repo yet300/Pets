@@ -15,8 +15,10 @@ public data class PetIdentity(
  * - description = trimmed value or `""`,
  * - a blank [fallbackId] deterministically normalizes to `"pet"`.
  *
- * Callers (io/network layers) derive `fallbackId` from directory names, ZIP
- * layout, or URLs and pass it in. No random IDs are ever generated.
+ * Callers (io layer, or hosts passing bytes directly) derive `fallbackId`
+ * from directory names, ZIP layout, or their own transport (e.g. a downloaded
+ * filename) and pass it in. The library never parses URLs. No random IDs are
+ * ever generated.
  */
 public fun normalizePetIdentity(
     manifestId: String?,
