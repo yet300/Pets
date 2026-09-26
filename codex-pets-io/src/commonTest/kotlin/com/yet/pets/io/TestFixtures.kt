@@ -1,5 +1,6 @@
 package com.yet.pets.io
 
+import com.yet.pets.io.internal.zip.Crc32
 import okio.Buffer
 import okio.ByteString.Companion.encodeUtf8
 import okio.Deflater
@@ -30,7 +31,7 @@ internal fun manifestJson(
 }
 
 /** Int-based byte collector (avoids Byte/Int literal mixing). */
-private class Bytes {
+internal class ByteWriter {
     private val data = ArrayList<Byte>()
     fun b(value: Int) {
         data.add((value and 0xFF).toByte())
@@ -83,34 +84,39 @@ private class Bytes {
     val size: Int get() = data.size
 }
 
-private fun be16(value: Int): ByteArray = Bytes().apply { be16(value) }.build()
-private fun be32(value: Long): ByteArray = Bytes().apply { be32(value) }.build()
-private fun le16(value: Int): ByteArray = Bytes().apply { le16(value) }.build()
-private fun le32(value: Long): ByteArray = Bytes().apply { le32(value) }.build()
-
 // -- Synthetic image fixtures (headers only; the probe never reads pixels). --
 
-internal fun pngBytes(width: Int = SHEET_W, height: Int = SHEET_H): ByteArray =
-    Bytes().apply {
-        bytes(137, 80, 78, 71, 13, 10, 26, 10)
-        be32(13)
-        ascii("IHDR")
+internal fun pngBytes(width: Int = SHEET_W, height: Int = SHEET_H, badCrc: Boolean = false): ByteArray {
+    val ihdr = ByteWriter().apply {
         be32(width.toLong())
         be32(height.toLong())
         bytes(8, 6, 0, 0, 0)
-        be32(0) // CRC placeholder (probe does not verify it)
     }.build()
+    val crc = Crc32.of("IHDR".encodeToByteArray() + ihdr)
+    val stored = if (badCrc) crc + 1 else crc
+    return ByteWriter().apply {
+        bytes(137, 80, 78, 71, 13, 10, 26, 10)
+        be32(13)
+        ascii("IHDR")
+        raw(ihdr)
+        be32(stored)
+    }.build()
+}
 
-internal fun gifBytes(width: Int = SHEET_W, height: Int = SHEET_H): ByteArray =
-    Bytes().apply {
-        ascii("GIF89a")
+internal fun gifBytes(
+    width: Int = SHEET_W,
+    height: Int = SHEET_H,
+    version: String = "GIF89a",
+): ByteArray =
+    ByteWriter().apply {
+        ascii(version)
         le16(width)
         le16(height)
         bytes(0x70, 0, 0)
     }.build()
 
 internal fun jpegBytes(width: Int = SHEET_W, height: Int = SHEET_H, withApp0: Boolean = true): ByteArray =
-    Bytes().apply {
+    ByteWriter().apply {
         bytes(0xFF, 0xD8) // SOI
         if (withApp0) {
             bytes(0xFF, 0xE0) // APP0
@@ -128,7 +134,7 @@ internal fun jpegBytes(width: Int = SHEET_W, height: Int = SHEET_H, withApp0: Bo
     }.build()
 
 internal fun webpVp8Bytes(width: Int = SHEET_W, height: Int = SHEET_H): ByteArray {
-    val payload = Bytes().apply {
+    val payload = ByteWriter().apply {
         bytes(0x2D, 0x10, 0x00) // 3-byte frame tag (arbitrary)
         bytes(0x9D, 0x01, 0x2A) // start code
         le16(width and 0x3FFF)
@@ -142,7 +148,7 @@ internal fun webpVp8lBytes(width: Int = SHEET_W, height: Int = SHEET_H): ByteArr
     val w = (width - 1) and 0x3FFF
     val h = (height - 1) and 0x3FFF
     val bits = (w.toLong() or (h.toLong() shl 14)).toInt()
-    val payload = Bytes().apply {
+    val payload = ByteWriter().apply {
         bytes(0x2F)
         le32(bits.toLong())
         repeat(32) { b(0x11) }
@@ -154,7 +160,7 @@ internal fun webpVp8xBytes(width: Int = SHEET_W, height: Int = SHEET_H): ByteArr
     // Layout verified against a real animated sample (300x225 ground truth).
     val w = width - 1
     val h = height - 1
-    val payload = Bytes().apply {
+    val payload = ByteWriter().apply {
         bytes(0x10) // feature flags (arbitrary)
         bytes(0, 0, 0) // reserved
         le24(w)
@@ -165,7 +171,7 @@ internal fun webpVp8xBytes(width: Int = SHEET_W, height: Int = SHEET_H): ByteArr
 
 private fun riffWebp(fourCc: ByteArray, payload: ByteArray): ByteArray {
     val padded = if (payload.size % 2 == 1) payload + byteArrayOf(0) else payload
-    return Bytes().apply {
+    return ByteWriter().apply {
         ascii("RIFF")
         le32((4 + 8 + padded.size).toLong())
         ascii("WEBP")
@@ -221,6 +227,21 @@ internal class ZipEntrySpec(
     val unixMode: Long? = null,
     val encrypted: Boolean = false,
     val directory: Boolean = false,
+    /** Raw name bytes override (for malformed-encoding tests). */
+    val nameBytesOverride: ByteArray? = null,
+    /** Override flags in BOTH headers (for flag-policy tests). */
+    val flagsOverride: Int? = null,
+    /** Local-header-only overrides (for central/local consistency tests). */
+    val localNameOverride: String? = null,
+    val localFlagsOverride: Int? = null,
+    val localCrcOverride: Long? = null,
+    val localCompSizeOverride: Long? = null,
+    val localUncompSizeOverride: Long? = null,
+    /** Central-directory overrides (for lying-metadata tests). */
+    val centralCompSizeOverride: Long? = null,
+    val centralUncompSizeOverride: Long? = null,
+    val centralCrcOverride: Long? = null,
+    val centralLocalOffsetOverride: Long? = null,
 )
 
 internal fun deflateRaw(data: ByteArray): ByteArray {
@@ -232,7 +253,7 @@ internal fun deflateRaw(data: ByteArray): ByteArray {
 }
 
 internal fun buildZip(specs: List<ZipEntrySpec>): ByteArray {
-    val out = Bytes()
+    val out = ByteWriter()
     data class Central(val spec: ZipEntrySpec, val crc: Long, val comp: ByteArray, val offset: Int)
     val centrals = mutableListOf<Central>()
     for (spec in specs) {
@@ -245,29 +266,33 @@ internal fun buildZip(specs: List<ZipEntrySpec>): ByteArray {
             spec.data
         }
         val crc = Crc32.of(if (spec.directory) ByteArray(0) else spec.data)
-        val nameBytes = spec.name.encodeToByteArray()
-        val flags = if (spec.encrypted) 1 else 0
+        val nameBytes = spec.nameBytesOverride ?: spec.name.encodeToByteArray()
+        val localNameBytes = spec.localNameOverride?.encodeToByteArray() ?: nameBytes
+        val flags = spec.flagsOverride ?: if (spec.encrypted) 1 else 0
+        val localFlags = spec.localFlagsOverride ?: flags
+        val uncomp = if (spec.directory) 0 else spec.data.size.toLong()
         out.le32(0x04034b50L) // local signature
         out.le16(20) // version needed
-        out.le16(flags)
+        out.le16(localFlags)
         out.le16(spec.method)
         out.le16(0)
         out.le16(0) // time/date
-        out.le32(crc)
-        out.le32(payload.size.toLong())
-        out.le32(if (spec.directory) 0 else spec.data.size.toLong())
-        out.le16(nameBytes.size)
+        out.le32(spec.localCrcOverride ?: crc)
+        out.le32(spec.localCompSizeOverride ?: payload.size.toLong())
+        out.le32(spec.localUncompSizeOverride ?: uncomp)
+        out.le16(localNameBytes.size)
         out.le16(0) // extra
-        out.raw(nameBytes)
+        out.raw(localNameBytes)
         out.raw(payload)
         centrals += Central(spec, crc, payload, offset)
     }
     val centralOffset = out.size
     for (c in centrals) {
-        val nameBytes = c.spec.name.encodeToByteArray()
-        val flags = if (c.spec.encrypted) 1 else 0
+        val nameBytes = c.spec.nameBytesOverride ?: c.spec.name.encodeToByteArray()
+        val flags = c.spec.flagsOverride ?: if (c.spec.encrypted) 1 else 0
         val madeBy = if (c.spec.unixMode != null) (ZIP_MADE_BY_UNIX shl 8) or 20 else 20
         val extAttrs = if (c.spec.unixMode != null) (c.spec.unixMode shl 16) else 0L
+        val uncomp = if (c.spec.directory) 0 else c.spec.data.size.toLong()
         out.le32(0x02014b50L)
         out.le16(madeBy)
         out.le16(20)
@@ -275,16 +300,16 @@ internal fun buildZip(specs: List<ZipEntrySpec>): ByteArray {
         out.le16(c.spec.method)
         out.le16(0)
         out.le16(0)
-        out.le32(c.crc)
-        out.le32(c.comp.size.toLong())
-        out.le32(if (c.spec.directory) 0 else c.spec.data.size.toLong())
+        out.le32(c.spec.centralCrcOverride ?: c.crc)
+        out.le32(c.spec.centralCompSizeOverride ?: c.comp.size.toLong())
+        out.le32(c.spec.centralUncompSizeOverride ?: uncomp)
         out.le16(nameBytes.size)
         out.le16(0)
         out.le16(0)
         out.le16(0) // extra/comment/disk
         out.bytes(0, 0) // internal attrs
         out.le32(extAttrs)
-        out.le32(c.offset.toLong())
+        out.le32(c.spec.centralLocalOffsetOverride ?: c.offset.toLong())
         out.raw(nameBytes)
     }
     val centralSize = out.size - centralOffset

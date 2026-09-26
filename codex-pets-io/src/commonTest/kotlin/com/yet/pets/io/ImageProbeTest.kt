@@ -1,5 +1,8 @@
 package com.yet.pets.io
 
+import com.yet.pets.io.internal.image.ImageProbe
+import com.yet.pets.io.internal.zip.Crc32
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -56,6 +59,47 @@ class ImageProbeTest {
         assertEquals(300, info.width)
         assertEquals(225, info.height)
         assertEquals(com.yet.pets.core.SpritesheetFormat.WEBP, info.format)
+    }
+
+    @Test
+    fun gif87aDimensions() {
+        val info = ImageProbe.probe(gifBytes(800, 600, version = "GIF87a"))!!
+        assertEquals(800, info.width)
+        assertEquals(600, info.height)
+        assertEquals(com.yet.pets.core.SpritesheetFormat.GIF, info.format)
+    }
+
+    @Test
+    fun pngBadIhdrCrcRejected() {
+        assertEquals(null, ImageProbe.probe(pngBytes(badCrc = true)))
+    }
+
+    @Test
+    fun pngTruncatedCrcRejected() {
+        // Valid IHDR + payload, but the 4 CRC bytes are missing.
+        assertEquals(null, ImageProbe.probe(pngBytes().copyOfRange(0, 8 + 8 + 13)))
+    }
+
+    @Test
+    fun pngBadIhdrSizeRejected() {
+        val good = pngBytes()
+        // IHDR length field (offset 8) claims 12 instead of 13.
+        val bad = good.copyOf()
+        bad[11] = 12
+        assertEquals(null, ImageProbe.probe(bad))
+    }
+
+    @Test
+    fun pngZeroDimensionsRejected() {
+        assertEquals(null, ImageProbe.probe(pngBytes(0, 600)))
+        assertEquals(null, ImageProbe.probe(pngBytes(800, 0)))
+    }
+
+    @Test
+    fun pngValid1536x1872() {
+        val info = ImageProbe.probe(pngBytes(1536, 1872))!!
+        assertEquals(1536, info.width)
+        assertEquals(1872, info.height)
     }
 
     @Test

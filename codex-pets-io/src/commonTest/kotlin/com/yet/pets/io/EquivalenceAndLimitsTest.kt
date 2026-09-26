@@ -2,6 +2,7 @@ package com.yet.pets.io
 
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
+import com.yet.pets.io.internal.fs.loadPetDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

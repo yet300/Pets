@@ -2,6 +2,7 @@ package com.yet.pets.io
 
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
+import com.yet.pets.io.internal.fs.loadPetDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -168,6 +169,17 @@ class DirectoryLoadingTest {
         fs.createSymlink("/pkg/link.webp".toPath(), "/pkg/real.webp".toPath())
         val success = loadDirSuccess(fs, "/pkg")
         assertTrue(success.spritesheetBytes.contentEquals(sheet))
+    }
+
+    @Test
+    fun danglingSpritesheetSymlinkIsTyped() {
+        val fs = FakeFileSystem()
+        fs.allowSymlinks = true
+        fs.createDirectories("/pkg".toPath())
+        fs.writeText("/pkg/pet.json".toPath(), manifestJson(spritesheetPath = "ghost.webp"))
+        fs.createSymlink("/pkg/ghost.webp".toPath(), "/pkg/nowhere.webp".toPath())
+        val errors = loadDirFailure(fs, "/pkg")
+        assertIs<PetLoadError.DanglingSymlink>(errors.single())
     }
 
     @Test

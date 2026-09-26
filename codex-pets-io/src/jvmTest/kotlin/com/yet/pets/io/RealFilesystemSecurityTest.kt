@@ -5,6 +5,7 @@ import okio.Path.Companion.toPath
 import java.nio.file.Files
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createSymbolicLinkPointingTo
+import com.yet.pets.io.internal.fs.loadPetDirectory
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertIs
@@ -98,11 +99,7 @@ class RealFilesystemSecurityTest {
         root.resolve("ghost.webp").createSymbolicLinkPointingTo(root.resolve("nowhere.webp"))
         val outcome = loadDir(root)
         val failure = assertIs<PetLoadOutcome.Failure>(outcome)
-        assertTrue(
-            failure.errors.single() is PetLoadError.DanglingSymlink ||
-                failure.errors.single() is PetLoadError.MissingSpritesheet,
-            "got ${failure.errors.single()}",
-        )
+        assertIs<PetLoadError.DanglingSymlink>(failure.errors.single())
     }
 
     @Test
@@ -119,12 +116,9 @@ class RealFilesystemSecurityTest {
         root.resolve("pet.json").toFile().writeText(manifestJson(spritesheetPath = "foo/sheet.webp"))
         val outcome = loadDir(root)
         val failure = assertIs<PetLoadOutcome.Failure>(outcome)
-        // Either escape (canonical target outside root) — never silent success.
-        assertTrue(
-            failure.errors.single() is PetLoadError.PathEscape ||
-                failure.errors.single() is PetLoadError.MissingSpritesheet,
-            "got ${failure.errors.single()}",
-        )
+        // Segment-aware containment: the canonical target lives under the
+        // sibling directory, never under root — escape on every host.
+        assertIs<PetLoadError.PathEscape>(failure.errors.single())
     }
 
     @Test
@@ -154,6 +148,66 @@ class RealFilesystemSecurityTest {
         val outcome = loadDir(root)
         val failure = assertIs<PetLoadOutcome.Failure>(outcome)
         assertIs<PetLoadError.LimitExceeded>(failure.errors.single())
+    }
+
+    @Test
+    fun manifestInRootSymlinkLoads() {
+        val root = newRoot()
+        root.resolve("real.json").toFile().writeText(manifestJson(id = "linked"))
+        root.resolve("spritesheet.webp").toFile().writeBytes(webpVp8Bytes())
+        root.resolve("pet.json").createSymbolicLinkPointingTo(root.resolve("real.json"))
+        val outcome = loadDir(root)
+        val success = assertIs<PetLoadOutcome.Success>(outcome, "in-root manifest link must load: $outcome")
+        assertTrue(success.definition.id == "linked")
+    }
+
+    @Test
+    fun manifestEscapeRejected() {
+        val root = newRoot()
+        val outside = Files.createTempFile("outside-manifest", ".json")
+        roots.add(outside)
+        outside.toFile().writeText(manifestJson(id = "escaped"))
+        root.resolve("spritesheet.webp").toFile().writeBytes(webpVp8Bytes())
+        root.resolve("pet.json").createSymbolicLinkPointingTo(outside)
+        val outcome = loadDir(root)
+        val failure = assertIs<PetLoadOutcome.Failure>(outcome)
+        assertIs<PetLoadError.PathEscape>(failure.errors.single())
+    }
+
+    @Test
+    fun manifestDanglingIsTyped() {
+        val root = newRoot()
+        root.resolve("spritesheet.webp").toFile().writeBytes(webpVp8Bytes())
+        root.resolve("pet.json").createSymbolicLinkPointingTo(root.resolve("nowhere.json"))
+        val outcome = loadDir(root)
+        val failure = assertIs<PetLoadOutcome.Failure>(outcome)
+        assertIs<PetLoadError.DanglingManifest>(failure.errors.single())
+    }
+
+    @Test
+    fun escapingPetFailsDespiteValidAvatarOnRealFs() {
+        val root = newRoot()
+        val outside = Files.createTempFile("outside-manifest2", ".json")
+        roots.add(outside)
+        outside.toFile().writeText(manifestJson(id = "escaped"))
+        root.resolve("spritesheet.webp").toFile().writeBytes(webpVp8Bytes())
+        root.resolve("avatar.json").toFile().writeText(manifestJson(id = "avatar"))
+        root.resolve("pet.json").createSymbolicLinkPointingTo(outside)
+        val outcome = loadDir(root)
+        val failure = assertIs<PetLoadOutcome.Failure>(outcome)
+        assertIs<PetLoadError.PathEscape>(failure.errors.single())
+    }
+
+    @Test
+    fun rootItselfSymlinkedLoads() {
+        val root = newRoot()
+        writePackage(root)
+        val linkParent = Files.createTempDirectory("link-parent")
+        roots.add(linkParent)
+        val link = linkParent.resolve("pkg-link")
+        link.createSymbolicLinkPointingTo(root)
+        val outcome = loadDir(link)
+        assertIs<PetLoadOutcome.Success>(outcome, "symlinked root must load: $outcome")
     }
 
     @Test
