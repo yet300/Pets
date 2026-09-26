@@ -25,6 +25,18 @@ public final class com/yet/pets/io/PetLoadError$CompatibilityFailure : com/yet/p
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/yet/pets/io/PetLoadError$DanglingManifest : com/yet/pets/io/PetLoadError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/io/PetLoadError$DanglingManifest;
+	public static synthetic fun copy$default (Lcom/yet/pets/io/PetLoadError$DanglingManifest;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/io/PetLoadError$DanglingManifest;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getPath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/yet/pets/io/PetLoadError$DanglingSymlink : com/yet/pets/io/PetLoadError {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;

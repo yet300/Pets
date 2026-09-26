@@ -38,6 +38,21 @@ sealed interface com.yet.pets.io/PetLoadError { // com.yet.pets.io/PetLoadError|
         final fun toString(): kotlin/String // com.yet.pets.io/PetLoadError.CompatibilityFailure.toString|toString(){}[0]
     }
 
+    final class DanglingManifest : com.yet.pets.io/PetLoadError { // com.yet.pets.io/PetLoadError.DanglingManifest|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.io/PetLoadError.DanglingManifest.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.io/PetLoadError.DanglingManifest.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.io/PetLoadError.DanglingManifest.message.<get-message>|<get-message>(){}[0]
+        final val path // com.yet.pets.io/PetLoadError.DanglingManifest.path|{}path[0]
+            final fun <get-path>(): kotlin/String // com.yet.pets.io/PetLoadError.DanglingManifest.path.<get-path>|<get-path>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.io/PetLoadError.DanglingManifest.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.io/PetLoadError.DanglingManifest // com.yet.pets.io/PetLoadError.DanglingManifest.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.io/PetLoadError.DanglingManifest.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.io/PetLoadError.DanglingManifest.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.io/PetLoadError.DanglingManifest.toString|toString(){}[0]
+    }
+
     final class DanglingSymlink : com.yet.pets.io/PetLoadError { // com.yet.pets.io/PetLoadError.DanglingSymlink|null[0]
         constructor <init>(kotlin/String) // com.yet.pets.io/PetLoadError.DanglingSymlink.<init>|<init>(kotlin.String){}[0]
 

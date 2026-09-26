@@ -5,8 +5,6 @@ public final class com/yet/pets/core/AtlasGeometry {
 	public final fun component4 ()I
 	public final fun component5 ()I
 	public final fun component6 ()I
-	public final fun copy (IIIIII)Lcom/yet/pets/core/AtlasGeometry;
-	public static synthetic fun copy$default (Lcom/yet/pets/core/AtlasGeometry;IIIIIIILjava/lang/Object;)Lcom/yet/pets/core/AtlasGeometry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAtlasHeight ()I
 	public final fun getAtlasWidth ()I

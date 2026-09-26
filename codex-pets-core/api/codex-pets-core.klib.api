@@ -268,7 +268,6 @@ final class com.yet.pets.core/AtlasGeometry { // com.yet.pets.core/AtlasGeometry
     final fun component4(): kotlin/Int // com.yet.pets.core/AtlasGeometry.component4|component4(){}[0]
     final fun component5(): kotlin/Int // com.yet.pets.core/AtlasGeometry.component5|component5(){}[0]
     final fun component6(): kotlin/Int // com.yet.pets.core/AtlasGeometry.component6|component6(){}[0]
-    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): com.yet.pets.core/AtlasGeometry // com.yet.pets.core/AtlasGeometry.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/AtlasGeometry.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.yet.pets.core/AtlasGeometry.hashCode|hashCode(){}[0]
     final fun sourceRectForOrNull(kotlin/Int): com.yet.pets.core/IntRect? // com.yet.pets.core/AtlasGeometry.sourceRectForOrNull|sourceRectForOrNull(kotlin.Int){}[0]

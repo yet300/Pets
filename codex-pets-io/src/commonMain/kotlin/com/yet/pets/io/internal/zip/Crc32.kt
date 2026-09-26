@@ -1,4 +1,4 @@
-package com.yet.pets.io
+package com.yet.pets.io.internal.zip
 
 /**
  * Minimal table-driven CRC-32 (IEEE 802.3, polynomial 0xEDB88320) for ZIP entry

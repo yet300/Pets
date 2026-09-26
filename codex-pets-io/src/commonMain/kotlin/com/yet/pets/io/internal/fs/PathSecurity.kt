@@ -1,5 +1,7 @@
-package com.yet.pets.io
+package com.yet.pets.io.internal.fs
 
+import com.yet.pets.io.AbortWith
+import com.yet.pets.io.PetLoadError
 import okio.FileSystem
 import okio.Path
 
@@ -110,6 +112,25 @@ internal fun resolveContainedChild(
     if (!isStrictDescendant(canonicalRoot, canonicalTarget)) {
         throw AbortWith(PetLoadError.PathEscape(unresolved.toString()))
     }
+    // Some filesystems resolve without existence checks: verify the target
+    // stats. A symlink-proven leaf reports dangling; anything else is missing
+    // (including a file deleted between resolution and read).
+    val targetMetadata = try {
+        fileSystem.metadataOrNull(canonicalTarget)
+    } catch (_: Exception) {
+        null
+    }
+    if (targetMetadata == null) {
+        val linkTarget = try {
+            fileSystem.metadataOrNull(unresolved)?.symlinkTarget
+        } catch (_: Exception) {
+            null
+        }
+        if (linkTarget != null) {
+            throw AbortWith(PetLoadError.DanglingSymlink(unresolved.toString()))
+        }
+        throw AbortWith(PetLoadError.MissingSpritesheet(unresolved.toString()))
+    }
     return canonicalTarget
 }
 
@@ -117,6 +138,16 @@ private fun classifyUnresolvableTarget(
     fileSystem: FileSystem,
     unresolved: Path,
 ): AbortWith {
+    // Precise link detection first: several hosts stat the link itself, so a
+    // non-null metadata does not prove resolvability.
+    val linkTarget = try {
+        fileSystem.metadataOrNull(unresolved)?.symlinkTarget
+    } catch (_: Exception) {
+        null
+    }
+    if (linkTarget != null) {
+        return AbortWith(PetLoadError.DanglingSymlink(unresolved.toString()))
+    }
     // Best-effort dangling-symlink detection: the leaf name exists in its parent
     // listing but has no metadata (its target is missing).
     val parent = unresolved.parent

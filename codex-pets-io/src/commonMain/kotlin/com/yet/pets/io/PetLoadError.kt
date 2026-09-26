@@ -40,6 +40,11 @@ public sealed interface PetLoadError {
         override val message: String = "dangling symlink: $path"
     }
 
+    /** A manifest symlink target does not exist. Never classified as [MissingManifest]. */
+    public data class DanglingManifest(public val path: String) : PetLoadError {
+        override val message: String = "dangling manifest symlink: $path"
+    }
+
     /** Malformed, truncated, or structurally unsupported archive. */
     public data class InvalidArchive(override val message: String) : PetLoadError
 

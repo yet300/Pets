@@ -29,7 +29,7 @@ public sealed interface PetCompatibilityError {
         public val format: SpritesheetFormat,
     ) : PetCompatibilityError {
         override val message: String =
-            "unsupported spritesheet format $format, expected PNG, WEBP, GIF, or JPEG"
+            "unsupported spritesheet format $format, expected JPEG, PNG, GIF, or WEBP"
     }
 
     /** Custom `frame` has non-positive values or does not exactly cover the atlas. */
