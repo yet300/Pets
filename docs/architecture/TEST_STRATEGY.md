@@ -19,8 +19,9 @@
   `:codex-pets-io` phase, never to core.)
 - Real decoding is verified per platform family (JVM/Android-host with real PNG/
   WebP files generated at test time via platform codecs; iOS-sim smoke).
-- Deterministic ZIP tests; no network in tests (Ktor `MockEngine` for the
-  downloader's cap/redirect/timeout logic).
+- Deterministic ZIP tests; no network in tests (transport is host-owned and
+  out of scope — there is no downloader, no `MockEngine`, no URL loading to
+  test).
 - Runtime compatibility and authoring QA are tested as separate suites with
   opposite load-gate assertions (§3a vs §3b).
 
@@ -36,13 +37,13 @@
 
 ## 3. Required cases (traceable to the contract)
 
-### 3a. Runtime compatibility — gates loading (Phase 1 core rows vs Phase 2/3 io rows)
+### 3a. Runtime compatibility — gates loading (Phase 1 core rows vs Phase 2 io rows)
 
 Core rows (pure, Phase 1): manifest parsing/defaults, geometry, frame count,
 indices, fps, loop model, fallback existence, identity, effective
-spritesheet-path STRING default. IO/network rows below (lexical path rejection,
-file discovery, symlinks, ZIP, limits, downloader) are Phase 2/3 and run
-against the io/network modules, never core.
+spritesheet-path STRING default. IO rows below (lexical path rejection,
+file discovery, symlinks, ZIP, limits) are Phase 2 and run
+against the io module, never core.
 
 Manifest parsing: all-optional-fields defaulting; `frame` exact-cover accept;
 non-covering grid reject; zero dims reject; count > 256 reject; unknown fields
@@ -75,14 +76,6 @@ support where available); corrupt ZIP (bad CRC/truncation); raw-blob pre-cap rej
 indexing; entry-count > 64; compressed > 16 MiB; uncompressed > 32 MiB; ratio
 tripwire; manifest > 64 KiB; spritesheet > 8 MiB; root-vs-nested ambiguity (all
 three shapes: none / both / two nests → `AmbiguousPackage`).
-Network (MockEngine, `loadPetZipFromUrl`): https-only (http rejected pre-flight);
-redirect downgrade aborts; remote cap = archive limit (16 MiB default):
-`content-length` preflight over cap aborts, per-chunk enforcement aborts,
-`DownloadPolicy` lower bound honored, above-hard-limit policy value rejected
-(not clamped); downloaded bytes flow through the io ZIP parser (assert a valid
-ZIP URL yields a loaded definition; assert an oversized/invalid ZIP URL yields
-the io error, not a network-typed error); non-2xx typed error; cancellation
-discards bytes; 60 s timeout honored (virtual time).
 
 ### 3b. Authoring QA — DEFERRED tooling (not Phase 1/2)
 
@@ -137,9 +130,10 @@ nanoseconds — never integer-ms fields, never public Duration):
 Explicit manifest id wins; missing id + present displayName (id falls back to
 directory name per CLI); missing id/displayName + directory basename; nested ZIP
 top-level dir name; root-layout ZIP bytes default `"pet"`; explicit
-`fallbackId`/`sourceName` parameter overrides the default; URL ending in
-`bella.zip` → `"bella"`; blank/whitespace-only id/displayName treated as absent;
-post-redirect URL wins for the fallback (manifest id still wins overall).
+`fallbackId`/`sourceName` parameter overrides the default;
+blank/whitespace-only id/displayName treated as absent.
+There are no URL-derived identity sources: URL parsing is host-owned and out
+of scope.
 
 ### 3e. Renderer (compose, host/instrumented)
 
@@ -153,8 +147,7 @@ gone from the API dump). Module boundary: loader success carries
 ## 4. CI mapping (matches the support matrix — no Native-linux leg)
 
 `commonTest` on supported legs: JVM, iosSimulatorArm64, Android host.
-Decoder tests on JVM + Android host; downloader tests on JVM (MockEngine);
-`checkKotlinAbi` (Kotlin 2.4 built-in) + Dokka on the JVM leg; iOS-sim leg runs
+Decoder tests on JVM + Android host; `checkKotlinAbi` (Kotlin 2.4 built-in) + Dokka on the JVM leg; iOS-sim leg runs
 the core suite as consumer canary. No `linuxX64` Kotlin/Native leg (deferred
 target — a leg would misrepresent support). Coverage target for core
 validation/player paths: 100% branch on the cases above; enforced by review

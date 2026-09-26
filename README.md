@@ -18,7 +18,13 @@ when (val outcome = PetLoader.loadPetZip(zipBytes, fallbackId = "bella")) {
 }
 ```
 
-Network loading, Compose rendering, and Desktop UI are future phases and do
-not exist yet. See `docs/research/CODEX_COMPATIBILITY.md` for the pinned
+Compose rendering and Desktop UI are future phases (Phase 3+) and do
+not exist yet. There is deliberately NO network module: transport is
+host-owned — codex-pets-kmp does not own transport. Applications obtain
+manifest/spritesheet/package bytes through app resources, the filesystem, a
+database, Ktor, OkHttp, URLSession, Firebase, GitHub, a custom backend, or any
+other source, then pass those bytes/data into the appropriate core/io/compose
+API. The library never fetches from the network and never parses URLs.
+See `docs/research/CODEX_COMPATIBILITY.md` for the pinned
 upstream contract, `docs/architecture/` for design, `docs/audit/` for audit
 history, and `SECURITY.md` for security boundaries and reporting.

@@ -25,8 +25,10 @@ No production code is written in this phase.
    `spriteIndex`, never eagerly sliced `ImageBitmap`s.
 3. Animation names are open: `PetAnimationKey(value: String)` with typed constants
    for known Codex states. No speculative V2/look-direction types in v1 public API.
-4. Networking is optional and isolated (`core <- io <- network`); consumers that
-   do not load from URL never see Ktor.
+4. There is NO first-party network module in v1 (`core <- io`; `core <- compose
+   <- desktop`). Transport is host-owned: codex-pets-kmp does not own transport
+   (see §6). Consumers that load from URLs fetch bytes with their own stack and
+   pass them into core/io/compose APIs.
 5. Exactly one filesystem abstraction across all targets (see §4).
 6. Timing is per-frame nanoseconds as explicitly named `Long` values (CLI
    `model.rs` model, nanosecond playback math), never integer-millisecond fields
@@ -38,7 +40,8 @@ No production code is written in this phase.
 ## 2. Conceptual pipeline
 
 ```text
-Raw package (dir | zip | url-zip)
+Raw package (dir | zip) — bytes supplied by the host (app resources, filesystem,
+database, or any host-owned transport; the library never fetches from the network)
   -> Codex manifest parser          (core: JSON -> raw manifest model, unknown-field tolerant)
   -> compatibility profile          (core, internal: CLI V1 profile; general seam, no invented behavior)
   -> normalized Pet definition      (core: PetDefinition, pure data + geometry, no diagnostics)
@@ -60,12 +63,15 @@ rectangle via `AtlasGeometry.sourceRectForOrNull`.
 ## 3. Module graph (recommended: accept the proposed layout)
 
 ```text
-:codex-pets-core ← :codex-pets-io ← :codex-pets-network   (Ktor lives ONLY in network)
+:codex-pets-core ← :codex-pets-io   (Okio lives ONLY in io)
 :codex-pets-core ← :codex-pets-compose ← :codex-pets-desktop
 :sample → all
 ```
 
-The proposed layout is justified with one correction (network over io):
+There is no `:codex-pets-network` module in v1. How bytes arrive from the
+network is the host application's responsibility (see §6).
+
+The proposed layout is justified:
 
 - `core`: pure Kotlin, zero platform/UI/network deps. Dependencies allowed:
   Kotlin stdlib + `kotlinx-serialization-json` (manifest parsing) and nothing
@@ -75,12 +81,8 @@ The proposed layout is justified with one correction (network over io):
   confinement, limits, image/package facts) and supplies them to core, which
   remains the semantic compatibility authority. Depends on core + the single
   filesystem lib (§4). No Ktor. Authoring pixel QA is deferred tooling and is
-  NOT part of io.
-- `network`: pet-oriented URL loading with exactly one v1 semantic — HTTPS URL
-  → ZIP pet package → bounded download → io ZIP parser (`loadPetZipFromUrl`).
-  Depends on **io** (and transitively core), so consumers that do not load from
-  URL skip both Ktor and its engines. This is remote custom packages, never
-  OpenAI's built-in spritesheet CDN (out of scope, §6).
+  NOT part of io. IO is OPTIONAL: consumers using only `core + compose` never
+  see Okio.
 - `compose`: renderer + state holders. Depends on core only (plus Compose).
   Holds exactly one decoded atlas `ImageBitmap` per pet and draws source regions.
 - `desktop`: JVM/Desktop window/overlay helpers (placement, drag, always-on-top
@@ -88,14 +90,11 @@ The proposed layout is justified with one correction (network over io):
   with proven need.
 - `sample`: demo apps (android + desktop at minimum). May depend on all.
 
-Dependency direction `core <- io <- network`, `core <- compose`,
+Dependency direction `core <- io`, `core <- compose`,
 `compose <- desktop` is enforced; `sample` is the only module allowed to span
 layers. Alternative considered (merging `desktop` into `compose`): rejected —
 window management APIs are JVM/Desktop-only and would pollute the shared Compose
-API surface and iOS/Android consumers. Alternative considered (network beside io,
-`core <- network`): rejected — the v1 URL semantic *is* "download a ZIP and run
-it through the io parser", so depending on io removes a duplicated ZIP path and
-keeps one enforcement point for limits and validation.
+API surface and iOS/Android consumers.
 
 ## 4. Filesystem abstraction: exactly one — Okio
 
@@ -228,33 +227,31 @@ different points:
   `--strict-qa` sample/CI mode), which still reports through `PetAuthoringReport`
   rather than corrupting load outcomes.
 
-## 6. Network design (network module over io, optional)
+## 6. Transport is host-owned — no network module in v1
 
-Pet-oriented URL loading with one precise v1 semantic: **HTTPS URL → ZIP pet
-package → bounded download → io ZIP parser**. Not implemented in Phase 0.
+codex-pets-kmp does not own transport. There is NO `:codex-pets-network`
+module, NO Ktor dependency, NO HTTP/download/redirect/caching code, and NO
+`loadPetZipFromUrl` / `DownloadPolicy` / HTTP-status / redirect-policy API in
+v1. Not implemented, not planned for v1.
 
-- Public entry: `loadPetZipFromUrl(url, limits, policy): PetLoadOutcome`;
-  internally downloads bounded bytes, then delegates to the io ZIP loader — one
-  enforcement point for limits and runtime validation.
-- Schemes: **https only**, validated before request and re-validated after every
-  redirect (CLI `validate_download_url` parity); http/file/custom schemes rejected.
-- Redirects: follow preserves https-only invariant; any downgrade or
-  non-https landing URL aborts.
-- Size: remote ZIP cap = `PetPackageLimits` max compressed archive bytes
-  (**16 MiB** default) — NOT the 4 MiB OpenAI built-in spritesheet cap, which
-  applies to a different object (single CDN image) and stays in compatibility
-  research only. Pre-checked against `content-length` when available, enforced
-  incrementally per chunk; overshoot aborts with a typed error. Downloaded bytes
-  still pass through the io ZIP limits afterward. `DownloadPolicy` may configure
-  a LOWER bound only; values above the archive hard limit are rejected, never
-  silently clamped.
-- Timeout: 60 s total (CLI parity), configurable downward by caller.
-- HTTP errors: non-2xx → typed `HttpStatusError(status)`; no silent fallback.
-- Content handling: the download is treated as a ZIP package blob; it is never
-  sniffed as an image and never confused with OpenAI's built-in spritesheet CDN
-  (different host, different shape, out of scope — see research doc §2.7).
-- Cancellation: fully cooperative via coroutine cancellation; partial buffers are
-  discarded, nothing is cached on cancel or failure.
+Applications may obtain manifest/spritesheet/package bytes through app
+resources, the filesystem, a database, Ktor, OkHttp, URLSession, Firebase,
+GitHub, a custom backend, or any other source — then pass those bytes/data
+into the appropriate core/io/compose API (e.g. `PetLoader.loadPetZip(bytes,
+fallbackId = ...)` or `rememberPetPlayerState(definition, spritesheetBytes)`).
+The library must not know how they were transported.
+
+URL parsing is not the library's responsibility: a host application
+downloading `https://example.com/bella.zip` may choose
+`PetLoader.loadPetZip(bytes = bytes, fallbackId = "bella")`, but the library
+never derives identity from URLs (see PUBLIC_API_PROPOSAL.md §4.1).
+
+The CLI's built-in spritesheet CDN behavior (https-only, redirects
+re-validated, 60 s timeout, 4 MiB cap on a single CDN image) stays in
+compatibility research only
+(`docs/research/CODEX_COMPATIBILITY.md` §2.7) as upstream context. It implies
+no library download implementation.
+
 - No caching, no CDN pinning, no built-in-pet catalog in v1.
 
 ## 7. Compatibility profiles (internal, general, no invented behavior)
@@ -296,7 +293,7 @@ decoders, CI legs, and test pipelines.
 | Target | v1 | Rationale / cost |
 |---|---|---|
 | Android (minSdk 24) | ✅ supported | Compose + decoder story mature; CI host-testable |
-| iOS device (arm64) | ✅ supported | Core/io/network are pure KMP; Compose iOS renderer via shared compose module |
+| iOS device (arm64) | ✅ supported | Core/io are pure Kotlin; Compose iOS renderer via shared compose module |
 | iOS simulator (arm64) | ✅ supported | Same code as device; CI-runnable on macOS runners |
 | JVM Desktop (published once, runs on macOS / Windows / Linux) | ✅ supported | Reference renderer host; full test/debug tooling |
 | Kotlin/Native linuxX64 | ❌ deferred | Own decoder + window impl + CI leg; JVM Desktop covers Linux in v1 |
@@ -342,8 +339,9 @@ Explicit policy over popularity — each addition justified:
   traversal disclosure channel, limits table) and `CONTRIBUTING.md`.
 - Dependency discipline: version catalog only (already in use); repair the
   catalog's dangling references (missing `androidx-lifecycle`, `coil`,
-  `kotlinx-serialization`, `kotlinxDatetime` versions); add Ktor/Okio/serialization
-  with explicit reasons; no new build plugin without a recorded justification.
+  `kotlinx-serialization`, `kotlinxDatetime` versions); add Okio/serialization
+  with explicit reasons; no Ktor, no Coil, no network library in v1 — no new
+  build plugin or image/network dependency without a recorded justification.
 - Template cleanup: delete `CustomFibi.kt`/`FibiTest.kt` (expect without actuals
   cannot compile once real targets build), fill empty README, rename root
   project (`multiplatform-library-template` → product name), fix coordinates.
@@ -354,3 +352,17 @@ Risks classified P0/P1/P2 and the phased implementation plan live in the Phase 0
 report (chat delivery) and are tracked from Phase 1 in `TEST_STRATEGY.md`.
 Next gate: explicit approval of this architecture + compatibility contract before
 any Phase 1 code.
+
+## 11. Roadmap (v1, no network phase)
+
+```text
+Phase 0 — Contract / Architecture
+Phase 1 — Core
+Phase 2 — IO / Package Loading
+Phase 3 — Compose Renderer
+Phase 4 — Desktop Helpers
+Phase 5 — Samples / Publishing / Hardening
+Phase 6 — Final Independent Audit
+```
+
+There is NO network phase. Transport is host-owned (§6).

@@ -37,9 +37,11 @@ enforced by `:codex-pets-io` and pinned by permanent regression tests.
 
 ## What is NOT covered
 
-Network fetching, image rendering, and authoring pixel QA do not exist in this
-library yet (explicit non-goals of Phases 1–2). Do not feed loader outputs to
-decoders without handling decoder errors.
+Transport/network fetching is host-owned and out of scope: this library never
+fetches bytes from the network, never parses URLs, and ships no HTTP/download/
+redirect/caching code. Image rendering and authoring pixel QA do not exist in
+this library yet (explicit non-goals of Phases 1–2). Do not feed loader outputs
+to decoders without handling decoder errors.
 
 ## Reporting a vulnerability
 

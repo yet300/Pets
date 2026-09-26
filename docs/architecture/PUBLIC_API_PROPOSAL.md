@@ -1,12 +1,12 @@
 # Public API Proposal (pre-implementation)
 
-Module split: `core` (pure) · `io` (okio) · `network` (Ktor, optional, over io) ·
+Module split: `core` (pure) · `io` (okio, optional) ·
 `compose` (renderer) · `desktop` (window helpers). Package root `com.yet.pets.*`.
 `explicitApi()` strict from Phase 1. No `ImageBitmap` outside `compose`/`desktop`.
 
 Core dependency budget: Kotlin stdlib + `kotlinx-serialization-json` only.
 No coroutines in core: there are no loaders in core (all I/O lives in
-`io`/`network`).
+`io`).
 
 > **Phase 1 Apple Interop Amendment.** Empirical Apple-interop results changed
 > the public representation (not the upstream contract): public
@@ -228,8 +228,6 @@ manifestId   = trimmed non-empty manifest.id               (else null)
 fallbackId   = directory basename              (loadPetDirectory)
              | top-level package dir name      (nested ZIP layout)
              | loadPetZip fallbackId parameter (root-layout ZIP; default "pet")
-             | URL path filename minus ".zip"  (loadPetZipFromUrl, post-redirect;
-                                               default "pet" when absent/blank)
              | "pet"                            (last resort — never random)
 
 pet.id          = manifestId ?: fallbackId
@@ -238,25 +236,24 @@ description     = trimmed manifest description ?: ""
 ```
 
 Manifest id always wins over any fallback. Blank/whitespace-only values are
-treated as absent everywhere. No random IDs.
+treated as absent everywhere. No random IDs. There are no URL-derived identity
+sources: URL parsing is not the library's responsibility. A host application
+downloading `https://example.com/bella.zip` may choose
+`PetLoader.loadPetZip(bytes = bytes, fallbackId = "bella")`, but the library
+never parses URLs.
 
-## 5. Network / Compose / Desktop API
+## 5. Transport / Compose / Desktop API
+
+There is NO first-party network module in v1: no `loadPetZipFromUrl`, no
+`DownloadPolicy`, no HTTP-status errors, no redirect policy, no URL-derived
+package identity. Transport is host-owned — codex-pets-kmp does not own
+transport. Applications may obtain manifest/spritesheet/package bytes through
+app resources, the filesystem, a database, Ktor, OkHttp, URLSession, Firebase,
+GitHub, a custom backend, or any other source, then pass those bytes/data into
+the appropriate core/io/compose API. The library must not know how they were
+transported.
 
 ```kotlin
-// network — pet-oriented URL loading. v1 semantic: HTTPS URL -> ZIP pet package
-// -> bounded download -> io ZIP parser. Depends on io (core <- io <- network),
-// so Ktor stays out of every consumer that does not load from URL.
-// suspend, cancellable, https-only (redirects re-validated), 60 s timeout.
-// Remote cap = PetPackageLimits max compressed archive bytes (16 MiB default);
-// DownloadPolicy may LOWER it, never raise it above the archive hard limit.
-// This is remote CUSTOM packages, not OpenAI's built-in CDN (4 MiB image cap
-// stays in compatibility research only).
-suspend fun loadPetZipFromUrl(
-    url: String,
-    limits: PetPackageLimits = PetPackageLimits.Default,
-    policy: DownloadPolicy = DownloadPolicy.Default,
-): PetLoadOutcome
-
 // compose — ONE atlas ImageBitmap per pet, subregion draws, lifecycle-safe.
 // Named PetPlayerState (not PetState) to avoid collision with pet/animation-state vocabulary.
 @Composable fun rememberPetPlayerState(definition: PetDefinition, spritesheetBytes: ByteArray): PetPlayerState
