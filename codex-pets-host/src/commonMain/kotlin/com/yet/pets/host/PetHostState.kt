@@ -23,6 +23,9 @@ import com.yet.pets.core.PetAnimations
  * `isPinned` is exposed alongside the spec's four core properties so callers
  * can distinguish pinned (static idle) from playing states without reaching
  * into the player; `pinToIdle`/`resume` mutate it deterministically.
+ * Use a state with at most one SystemOverlay composition at a time. Replacing
+ * the state disposes the old platform resource and creates one for the new
+ * state. Invoke control methods on the Compose/UI thread.
  */
 public class PetHostState internal constructor(
     visible: Boolean = true,
@@ -30,16 +33,39 @@ public class PetHostState internal constructor(
     yDp: Float = 0f,
     animation: PetAnimationKey = PetAnimations.Idle,
 ) {
+    private var overlayOwner: Any? = null
+
+    /** Actual system overlay result; [isVisible] remains the caller's intent. */
+    public var platformState: PetHostPlatformState by mutableStateOf(PetHostPlatformState.Hidden)
+        private set
+
+    internal fun claimOverlay(owner: Any) {
+        check(overlayOwner == null || overlayOwner === owner) {
+            "A PetHostState can back only one SystemOverlay host at a time"
+        }
+        overlayOwner = owner
+    }
+
+    internal fun reportOverlay(owner: Any, status: PetHostPlatformState) {
+        if (overlayOwner === owner) platformState = status
+    }
+
+    internal fun releaseOverlay(owner: Any) {
+        if (overlayOwner === owner) {
+            overlayOwner = null
+            platformState = PetHostPlatformState.Hidden
+        }
+    }
     /** Whether the pet should be visible. */
     public var isVisible: Boolean by mutableStateOf(visible)
         private set
 
     /** Requested horizontal position in dp. */
-    public var xDp: Float by mutableStateOf(xDp)
+    public var xDp: Float by mutableStateOf(if (xDp.isFinite()) xDp else 0f)
         private set
 
     /** Requested vertical position in dp. */
-    public var yDp: Float by mutableStateOf(yDp)
+    public var yDp: Float by mutableStateOf(if (yDp.isFinite()) yDp else 0f)
         private set
 
     /** Requested animation intent (applied to the player by the host). */
@@ -50,33 +76,33 @@ public class PetHostState internal constructor(
     public var isPinned: Boolean by mutableStateOf(false)
         private set
 
-    /** Makes the pet visible (platform host shows its surface). */
+    /** Makes the pet visible (platform host shows its surface). Call on the Compose/UI thread. */
     public fun show() {
         isVisible = true
     }
 
-    /** Hides the pet (platform host releases its surface; app keeps running). */
+    /** Hides the pet (platform host releases its surface; app keeps running). Call on the Compose/UI thread. */
     public fun hide() {
         isVisible = false
     }
 
-    /** Requests a new host position in dp. */
+    /** Requests a new host position in dp. Nonfinite coordinates become zero; negative coordinates are valid. Call on the Compose/UI thread. */
     public fun moveTo(xDp: Float, yDp: Float) {
-        this.xDp = xDp
-        this.yDp = yDp
+        this.xDp = if (xDp.isFinite()) xDp else 0f
+        this.yDp = if (yDp.isFinite()) yDp else 0f
     }
 
-    /** Requests a new animation intent (does not decode or restart position). */
+    /** Requests a new animation intent (does not decode or restart position). Call on the Compose/UI thread. */
     public fun play(animation: PetAnimationKey) {
         requestedAnimation = animation
     }
 
-    /** Enters static-idle mode (display stays pinned until [resume]). */
+    /** Enters static-idle mode (display stays pinned until [resume]). Call on the Compose/UI thread. */
     public fun pinToIdle() {
         isPinned = true
     }
 
-    /** Leaves static-idle mode (resumes the requested animation from zero). */
+    /** Leaves static-idle mode (resumes the requested animation from zero). Call on the Compose/UI thread. */
     public fun resume() {
         isPinned = false
     }
@@ -100,8 +126,8 @@ public fun rememberPetHostState(
 ): PetHostState = remember {
     PetHostState(
         visible = initiallyVisible,
-        xDp = initialXDp,
-        yDp = initialYDp,
+        xDp = if (initialXDp.isFinite()) initialXDp else 0f,
+        yDp = if (initialYDp.isFinite()) initialYDp else 0f,
         animation = initialAnimation,
     )
 }

@@ -1,10 +1,12 @@
 package com.yet.pets.host
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import com.yet.pets.compose.CodexPet
 import com.yet.pets.compose.PetAtlasState
+import com.yet.pets.compose.PetPlayerState
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetAnimations
 import com.yet.pets.core.PetDefinition
@@ -14,8 +16,12 @@ import com.yet.pets.core.SpritesheetFormat
 import com.yet.pets.core.SpritesheetInfo
 import com.yet.pets.core.samplePetAnimation
 import java.awt.image.BufferedImage
+import java.awt.GraphicsEnvironment
+import java.awt.Window
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
+import javax.swing.JWindow
+import javax.swing.SwingUtilities
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -158,6 +164,108 @@ class PetHostJvmTest {
     }
 
     @Test
+    fun realWindowFollowsVisibilityPositionAndModeSwitch() {
+        if (GraphicsEnvironment.isHeadless()) return
+        runComposeUiTest {
+            val prior = onSwingEdt { Window.getWindows().toSet() }
+            val host = PetHostState()
+            val hostRef = mutableStateOf(host)
+            val mode = mutableStateOf(PetHostMode.SystemOverlay)
+            val definition = testDefinition()
+            val atlas = fullAtlasPng()
+            setContent { PetHost(definition, atlas, hostRef.value, mode.value) }
+            waitUntil(timeoutMillis = 10_000) { host.platformState == PetHostPlatformState.Showing }
+            val window = onSwingEdt { (Window.getWindows().toSet() - prior).filterIsInstance<JWindow>().single() }
+            assertTrue(onSwingEdt { window.isVisible && window.isDisplayable && window.isAlwaysOnTop })
+            assertTrue(onSwingEdt { window.width in 1..2_000 && window.height in 1..2_000 })
+
+            host.moveTo(120f, 140f)
+            waitForIdle()
+            assertEquals(120, onSwingEdt { window.x })
+            assertEquals(140, onSwingEdt { window.y })
+            host.hide()
+            waitUntil(timeoutMillis = 5_000) { onSwingEdt { !window.isVisible } }
+            assertEquals(PetHostPlatformState.Hidden, host.platformState)
+            host.show()
+            waitUntil(timeoutMillis = 5_000) { onSwingEdt { window.isVisible } }
+            assertEquals(PetHostPlatformState.Showing, host.platformState)
+            assertTrue(onSwingEdt { window.isDisplayable })
+
+            mode.value = PetHostMode.InApp
+            waitUntil(timeoutMillis = 5_000) { onSwingEdt { !window.isDisplayable } }
+            assertEquals(PetHostPlatformState.Hidden, host.platformState)
+
+            mode.value = PetHostMode.SystemOverlay
+            waitUntil(timeoutMillis = 5_000) { host.platformState == PetHostPlatformState.Showing }
+            val reboundWindow = onSwingEdt { (Window.getWindows().toSet() - prior).filterIsInstance<JWindow>().filter { it.isDisplayable }.single() }
+            val replacement = PetHostState(xDp = 80f, yDp = 90f)
+            hostRef.value = replacement
+            waitUntil(timeoutMillis = 5_000) {
+                host.platformState == PetHostPlatformState.Hidden &&
+                    replacement.platformState == PetHostPlatformState.Showing
+            }
+            assertFalse(onSwingEdt { reboundWindow.isDisplayable })
+            val replacementWindow = onSwingEdt { (Window.getWindows().toSet() - prior).filterIsInstance<JWindow>().filter { it.isDisplayable }.single() }
+            assertEquals(80, onSwingEdt { replacementWindow.x })
+            assertEquals(90, onSwingEdt { replacementWindow.y })
+            mode.value = PetHostMode.InApp
+            waitUntil(timeoutMillis = 5_000) { onSwingEdt { !replacementWindow.isDisplayable } }
+        }
+    }
+
+    @Test
+    fun realWindowMutationsRunOnEdt() {
+        if (GraphicsEnvironment.isHeadless()) return
+        val window = RealJvmOverlayWindow()
+        window.configure(96, 104)
+        window.moveTo(25, 30)
+        window.setVisible(true)
+        assertTrue(onSwingEdt { window.windowRef()!!.isVisible })
+        assertFalse(SwingUtilities.isEventDispatchThread())
+        window.dispose()
+        assertFalse(onSwingEdt { window.windowRef()!!.isDisplayable })
+    }
+
+    @Test
+    fun hostPlayPinResumeUsesLatestIntentAcrossSameFrameChanges() {
+        runComposeUiTest {
+            val host = PetHostState()
+            var player: PetPlayerState? = null
+            PetHostPlayerTestProbe.onPlayer = { player = it }
+            try {
+                val definition = testDefinition()
+                setContent { PetHost(definition, tinyPngBytes, host, PetHostMode.InApp) }
+                waitForIdle()
+
+                host.play(PetAnimations.Waving)
+                host.pinToIdle()
+                waitForIdle()
+                assertTrue(player!!.isPinned)
+                assertEquals(PetAnimations.Idle, player!!.currentSample.animation)
+
+                host.play(PetAnimations.Running)
+                host.play(PetAnimations.Jumping)
+                host.play(PetAnimations.Waving)
+                host.resume()
+                waitForIdle()
+                assertFalse(player!!.isPinned)
+                assertEquals(PetAnimations.Waving, player!!.currentSample.animation)
+
+                host.play(PetAnimations.Running)
+                host.pinToIdle()
+                waitForIdle()
+                assertTrue(player!!.isPinned)
+                assertEquals(PetAnimations.Idle, player!!.currentSample.animation)
+                host.resume()
+                waitForIdle()
+                assertEquals(PetAnimations.Running, player!!.currentSample.animation)
+            } finally {
+                PetHostPlayerTestProbe.onPlayer = null
+            }
+        }
+    }
+
+    @Test
     fun jvmAvailabilityMapping() {
         // Pure OS-name mapping (no window creation).
         assertEquals(
@@ -175,6 +283,10 @@ class PetHostJvmTest {
         assertEquals(
             PetSystemOverlayAvailability.BestEffort,
             jvmAvailabilityForOsName("SunOS"),
+        )
+        assertEquals(
+            PetSystemOverlayAvailability.Unsupported,
+            jvmAvailabilityForOsName("Mac OS X", headless = true),
         )
     }
 

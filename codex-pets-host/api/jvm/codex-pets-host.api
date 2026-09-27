@@ -10,8 +10,20 @@ public final class com/yet/pets/host/PetHostMode : java/lang/Enum {
 	public static fun values ()[Lcom/yet/pets/host/PetHostMode;
 }
 
+public final class com/yet/pets/host/PetHostPlatformState : java/lang/Enum {
+	public static final field Hidden Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field PermissionRequired Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field PlatformRejected Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field Showing Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field Unsupported Lcom/yet/pets/host/PetHostPlatformState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/yet/pets/host/PetHostPlatformState;
+	public static fun values ()[Lcom/yet/pets/host/PetHostPlatformState;
+}
+
 public final class com/yet/pets/host/PetHostState {
 	public static final field $stable I
+	public final fun getPlatformState ()Lcom/yet/pets/host/PetHostPlatformState;
 	public final fun getRequestedAnimation ()Lcom/yet/pets/core/PetAnimationKey;
 	public final fun getXDp ()F
 	public final fun getYDp ()F

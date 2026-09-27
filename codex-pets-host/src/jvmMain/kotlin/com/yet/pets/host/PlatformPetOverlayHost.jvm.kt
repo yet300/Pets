@@ -6,9 +6,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.yet.pets.compose.CodexPet
 import com.yet.pets.compose.rememberPetPlayerState
@@ -16,12 +22,14 @@ import com.yet.pets.core.PetDefinition
 import java.awt.Color
 import java.awt.GraphicsEnvironment
 import javax.swing.JWindow
+import javax.swing.SwingUtilities
 
 /**
  * Pure OS-name mapping for JVM availability (testable without a window).
- * macOS/Windows -> Available; Linux/other -> BestEffort. Never Unsupported.
+ * macOS/Windows -> Available; Linux/other -> BestEffort; headless -> Unsupported.
  */
-internal fun jvmAvailabilityForOsName(osName: String): PetSystemOverlayAvailability = when {
+internal fun jvmAvailabilityForOsName(osName: String, headless: Boolean = false): PetSystemOverlayAvailability = when {
+    headless -> PetSystemOverlayAvailability.Unsupported
     osName.contains("mac", ignoreCase = true) -> PetSystemOverlayAvailability.Available
     osName.contains("windows", ignoreCase = true) -> PetSystemOverlayAvailability.Available
     osName.contains("linux", ignoreCase = true) -> PetSystemOverlayAvailability.BestEffort
@@ -31,7 +39,7 @@ internal fun jvmAvailabilityForOsName(osName: String): PetSystemOverlayAvailabil
 /**
  * JVM availability: macOS and Windows support the transparent floating window;
  * Linux window managers/Wayland may not guarantee always-on-top/positioning,
- * so Linux is BestEffort. Never Unsupported on JVM.
+ * so Linux is BestEffort. Headless environments are Unsupported.
  */
 @Composable
 internal actual fun platformSystemOverlayAvailability(): PetSystemOverlayAvailability {
@@ -40,7 +48,14 @@ internal actual fun platformSystemOverlayAvailability(): PetSystemOverlayAvailab
     } catch (_: SecurityException) {
         ""
     }
-    return jvmAvailabilityForOsName(os)
+    return jvmAvailabilityForOsName(os, GraphicsEnvironment.isHeadless())
+}
+
+internal fun <T> onSwingEdt(block: () -> T): T {
+    if (SwingUtilities.isEventDispatchThread()) return block()
+    var result: Result<T>? = null
+    SwingUtilities.invokeAndWait { result = runCatching(block) }
+    return result!!.getOrThrow()
 }
 
 /**
@@ -62,7 +77,7 @@ internal class RealJvmOverlayWindow : JvmOverlayWindow {
     private val window: JWindow? =
         if (GraphicsEnvironment.isHeadless()) {
             null
-        } else {
+        } else onSwingEdt {
             JWindow().apply {
                 // No visible frame/title/background: visually only the pet exists.
                 // A desktop pet cannot exist without an OS window; this window
@@ -79,33 +94,37 @@ internal class RealJvmOverlayWindow : JvmOverlayWindow {
     internal fun windowRef(): JWindow? = window
 
     override fun configure(widthPx: Int, heightPx: Int) {
-        window?.setSize(widthPx.coerceAtLeast(1), heightPx.coerceAtLeast(1))
+        onSwingEdt { window?.setSize(widthPx.coerceAtLeast(1), heightPx.coerceAtLeast(1)) }
     }
 
     override fun moveTo(xPx: Int, yPx: Int) {
         // Uses direct location so negative desktop coordinates (secondary
         // monitors via the active graphics configuration) remain
         // representable. No global >= 0 clamp.
-        window?.setLocation(xPx, yPx)
+        onSwingEdt { window?.setLocation(xPx, yPx) }
     }
 
     override fun setVisible(visible: Boolean) {
-        showing = visible
-        window?.isVisible = visible
+        onSwingEdt {
+            showing = visible
+            window?.isVisible = visible
+        }
     }
 
     override fun dispose() {
-        showing = false
-        window?.dispose()
+        onSwingEdt {
+            showing = false
+            window?.dispose()
+        }
     }
 
-    override val isShowing: Boolean get() = showing && window?.isVisible == true
+    override val isShowing: Boolean get() = onSwingEdt { showing && window?.isVisible == true }
 }
 
 /** Pure position/state adapter: no AWT calls except through [JvmOverlayWindow]. */
 internal class JvmPetOverlayController(
     private val window: JvmOverlayWindow,
-    private val densityScale: Float = 1f,
+    private var densityScale: Float = 1f,
 ) {
     var petWidthPx: Int = (PetHostDefaultPetWidthDp * densityScale).toInt().coerceAtLeast(1)
         private set
@@ -116,6 +135,10 @@ internal class JvmPetOverlayController(
         this.petWidthPx = petWidthPx.coerceAtLeast(1)
         this.petHeightPx = petHeightPx.coerceAtLeast(1)
         window.configure(this.petWidthPx, this.petHeightPx)
+    }
+
+    fun updateScale(scale: Float) {
+        if (scale.isFinite() && scale > 0f) densityScale = scale
     }
 
     fun showAt(xDp: Float, yDp: Float) {
@@ -136,7 +159,15 @@ internal class JvmPetOverlayController(
         window.dispose()
     }
 
-    fun dpToPx(dp: Float): Int = (dp * densityScale).toInt()
+    fun dpToPx(dp: Float): Int {
+        val scaled = dp.toDouble() * densityScale.toDouble()
+        return when {
+            scaled.isNaN() -> 0
+            scaled >= Int.MAX_VALUE -> Int.MAX_VALUE
+            scaled <= Int.MIN_VALUE -> Int.MIN_VALUE
+            else -> scaled.toInt()
+        }
+    }
 
     fun pxToDp(px: Int): Float = px / densityScale
 }
@@ -170,26 +201,29 @@ internal actual fun PlatformPetOverlayHost(
         definition.geometry.cellWidth.toFloat() / definition.geometry.cellHeight.toFloat()
     val petWidthDp = PetHostDefaultPetWidthDp
     val petHeightDp = if (cellAspect.isFinite() && cellAspect > 0f) petWidthDp / cellAspect else petWidthDp
-    // 1dp ~= 1px at the default desktop scale; window stays near pet size.
-    val petWidthPx = petWidthDp.toInt().coerceAtLeast(1)
-    val petHeightPx = petHeightDp.toInt().coerceAtLeast(1)
+    val composeDensity = LocalDensity.current.density
+    var resource by remember(state, definition, spritesheetBytes) { mutableStateOf<JvmOverlayResource?>(null) }
 
-    DisposableEffect(definition, spritesheetBytes) {
-        val overlay = RealJvmOverlayWindow()
+    DisposableEffect(state, definition, spritesheetBytes) {
+        val ownerToken = Any()
+        state.claimOverlay(ownerToken)
+        val overlay = onSwingEdt { RealJvmOverlayWindow() }
+        val window = overlay.windowRef() ?: error("Graphical overlay window unavailable")
         val controller = JvmPetOverlayController(overlay)
-        controller.configure(petWidthPx, petHeightPx)
-        val window = overlay.windowRef()
-
-        if (window != null) {
-            val panel = ComposePanel().apply {
-                setSize(petWidthPx, petHeightPx)
-            }
+        // Compose desktop density is expressed in AWT logical units already.
+        // AWT setLocation/setSize also take logical units; dividing by the
+        // GraphicsConfiguration device transform double-scales on Retina.
+        controller.updateScale(composeDensity)
+        val petWidthPx = controller.dpToPx(petWidthDp).coerceAtLeast(1)
+        val petHeightPx = controller.dpToPx(petHeightDp).coerceAtLeast(1)
+        val panel = onSwingEdt {
+            ComposePanel().apply { setSize(petWidthPx, petHeightPx) }
+        }
+        onSwingEdt {
             panel.setContent {
                 val player = rememberPetPlayerState(definition, spritesheetBytes)
-                LaunchedEffect(state.requestedAnimation) {
+                LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
                     player.play(state.requestedAnimation)
-                }
-                LaunchedEffect(state.isPinned) {
                     if (state.isPinned) player.pinToIdle() else if (player.isPinned) player.resume()
                 }
                 if (state.isVisible) {
@@ -199,8 +233,8 @@ internal actual fun PlatformPetOverlayHost(
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
                                     // Desktop drag moves the overlay window itself.
-                                    val dxDp = dragAmount.x
-                                    val dyDp = dragAmount.y
+                                    val dxDp = controller.pxToDp(dragAmount.x.toInt())
+                                    val dyDp = controller.pxToDp(dragAmount.y.toInt())
                                     val nextX = state.xDp + dxDp
                                     val nextY = state.yDp + dyDp
                                     state.moveTo(nextX, nextY)
@@ -214,24 +248,37 @@ internal actual fun PlatformPetOverlayHost(
             }
             window.contentPane.add(panel)
             window.setSize(petWidthPx, petHeightPx)
-            if (state.isVisible) {
-                controller.showAt(state.xDp, state.yDp)
-            }
         }
+        resource = JvmOverlayResource(controller, overlay, panel, ownerToken)
 
         onDispose {
+            resource = null
             controller.dispose()
+            state.releaseOverlay(ownerToken)
         }
     }
 
-    // Visibility changes after creation hide/show the same window without
-    // recreating it or terminating the app. Position sync during drag updates
-    // both the window and the state synchronously above; external moveTo calls
-    // are reflected on next drag/show. PetHostState remains the source of
-    // desired position.
-    LaunchedEffect(state.isVisible) {
-        // Documented sync point: the DisposableEffect owns the window; this
-        // effect observes visibility so future extensions can drive the same
-        // window instance. No window recreation here.
+    val desiredVisible = state.isVisible
+    val desiredX = state.xDp
+    val desiredY = state.yDp
+    SideEffect {
+        val current = resource ?: return@SideEffect
+        val window = current.overlay.windowRef() ?: return@SideEffect
+        current.controller.updateScale(composeDensity)
+        if (desiredVisible) {
+            if (current.overlay.isShowing) current.controller.moveTo(desiredX, desiredY)
+            else current.controller.showAt(desiredX, desiredY)
+            state.reportOverlay(current.ownerToken, PetHostPlatformState.Showing)
+        } else {
+            current.controller.hide()
+            state.reportOverlay(current.ownerToken, PetHostPlatformState.Hidden)
+        }
     }
 }
+
+private class JvmOverlayResource(
+    val controller: JvmPetOverlayController,
+    val overlay: RealJvmOverlayWindow,
+    val panel: ComposePanel,
+    val ownerToken: Any,
+)

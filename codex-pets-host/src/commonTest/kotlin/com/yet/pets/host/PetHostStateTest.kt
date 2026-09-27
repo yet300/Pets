@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 /**
  * Deterministic host-intent tests: no composition, no real delays, no decoder.
@@ -38,6 +39,34 @@ class PetHostStateTest {
         state.moveTo(12.5f, -3.25f)
         assertEquals(12.5f, state.xDp)
         assertEquals(-3.25f, state.yDp)
+    }
+
+    @Test
+    fun nonfinitePositionNormalizesWithoutClampingNegativeMonitors() {
+        val state = PetHostState(xDp = Float.NaN, yDp = Float.NEGATIVE_INFINITY)
+        assertEquals(0f, state.xDp)
+        assertEquals(0f, state.yDp)
+        state.moveTo(Float.POSITIVE_INFINITY, -250f)
+        assertEquals(0f, state.xDp)
+        assertEquals(-250f, state.yDp)
+    }
+
+    @Test
+    fun oneStateHasOneOverlayOwnerButDifferentStatesAreIndependent() {
+        val state = PetHostState()
+        val other = PetHostState()
+        val first = Any()
+        val second = Any()
+        state.claimOverlay(first)
+        assertFailsWith<IllegalStateException> { state.claimOverlay(second) }
+        other.claimOverlay(second)
+        state.reportOverlay(first, PetHostPlatformState.Showing)
+        assertEquals(PetHostPlatformState.Showing, state.platformState)
+        assertEquals(PetHostPlatformState.Hidden, other.platformState)
+        state.releaseOverlay(first)
+        state.claimOverlay(second)
+        state.releaseOverlay(second)
+        other.releaseOverlay(second)
     }
 
     @Test

@@ -17,6 +17,20 @@ final enum class com.yet.pets.host/PetHostMode : kotlin/Enum<com.yet.pets.host/P
     final fun values(): kotlin/Array<com.yet.pets.host/PetHostMode> // com.yet.pets.host/PetHostMode.values|values#static(){}[0]
 }
 
+final enum class com.yet.pets.host/PetHostPlatformState : kotlin/Enum<com.yet.pets.host/PetHostPlatformState> { // com.yet.pets.host/PetHostPlatformState|null[0]
+    enum entry Hidden // com.yet.pets.host/PetHostPlatformState.Hidden|null[0]
+    enum entry PermissionRequired // com.yet.pets.host/PetHostPlatformState.PermissionRequired|null[0]
+    enum entry PlatformRejected // com.yet.pets.host/PetHostPlatformState.PlatformRejected|null[0]
+    enum entry Showing // com.yet.pets.host/PetHostPlatformState.Showing|null[0]
+    enum entry Unsupported // com.yet.pets.host/PetHostPlatformState.Unsupported|null[0]
+
+    final val entries // com.yet.pets.host/PetHostPlatformState.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.yet.pets.host/PetHostPlatformState> // com.yet.pets.host/PetHostPlatformState.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.yet.pets.host/PetHostPlatformState // com.yet.pets.host/PetHostPlatformState.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.yet.pets.host/PetHostPlatformState> // com.yet.pets.host/PetHostPlatformState.values|values#static(){}[0]
+}
+
 final enum class com.yet.pets.host/PetSystemOverlayAvailability : kotlin/Enum<com.yet.pets.host/PetSystemOverlayAvailability> { // com.yet.pets.host/PetSystemOverlayAvailability|null[0]
     enum entry Available // com.yet.pets.host/PetSystemOverlayAvailability.Available|null[0]
     enum entry BestEffort // com.yet.pets.host/PetSystemOverlayAvailability.BestEffort|null[0]
@@ -35,6 +49,8 @@ final class com.yet.pets.host/PetHostState { // com.yet.pets.host/PetHostState|n
         final fun <get-isPinned>(): kotlin/Boolean // com.yet.pets.host/PetHostState.isPinned.<get-isPinned>|<get-isPinned>(){}[0]
     final var isVisible // com.yet.pets.host/PetHostState.isVisible|{}isVisible[0]
         final fun <get-isVisible>(): kotlin/Boolean // com.yet.pets.host/PetHostState.isVisible.<get-isVisible>|<get-isVisible>(){}[0]
+    final var platformState // com.yet.pets.host/PetHostState.platformState|{}platformState[0]
+        final fun <get-platformState>(): com.yet.pets.host/PetHostPlatformState // com.yet.pets.host/PetHostState.platformState.<get-platformState>|<get-platformState>(){}[0]
     final var requestedAnimation // com.yet.pets.host/PetHostState.requestedAnimation|{}requestedAnimation[0]
         final fun <get-requestedAnimation>(): com.yet.pets.core/PetAnimationKey // com.yet.pets.host/PetHostState.requestedAnimation.<get-requestedAnimation>|<get-requestedAnimation>(){}[0]
     final var xDp // com.yet.pets.host/PetHostState.xDp|{}xDp[0]

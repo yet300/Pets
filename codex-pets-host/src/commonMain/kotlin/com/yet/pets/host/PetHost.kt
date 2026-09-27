@@ -15,8 +15,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.yet.pets.compose.CodexPet
+import com.yet.pets.compose.PetPlayerState
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetDefinition
+
+/** Internal test observation only; never part of the host ABI. */
+internal object PetHostPlayerTestProbe {
+    var onPlayer: ((PetPlayerState) -> Unit)? = null
+}
 
 /**
  * Hosts a pet in the requested [mode].
@@ -82,14 +88,13 @@ internal fun PetInAppHost(
     // One player per host. The ByteArray instance is passed through unchanged:
     // Compose remains the image ownership/decode boundary (no extra copy here).
     val player = rememberPetPlayerState(definition, spritesheetBytes)
+    PetHostPlayerTestProbe.onPlayer?.invoke(player)
 
     // Host intent -> player. Effects only; drawing never mutates intent.
     // Same-key plays are no-ops inside the player, so drag/position updates
     // never restart the animation.
-    LaunchedEffect(state.requestedAnimation) {
+    LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
         player.play(state.requestedAnimation)
-    }
-    LaunchedEffect(state.isPinned) {
         if (state.isPinned) {
             player.pinToIdle()
         } else if (player.isPinned) {

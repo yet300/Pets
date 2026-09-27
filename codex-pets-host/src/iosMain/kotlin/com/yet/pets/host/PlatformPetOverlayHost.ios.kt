@@ -1,6 +1,7 @@
 package com.yet.pets.host
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import com.yet.pets.core.PetDefinition
 
 /**
@@ -27,6 +28,10 @@ internal actual fun PlatformPetOverlayHost(
     spritesheetBytes: ByteArray,
     state: PetHostState,
 ) {
-    // Intentionally empty: Unsupported is signaled via availability, and the
-    // host must not silently convert to InApp.
+    DisposableEffect(state) {
+        val token = Any()
+        state.claimOverlay(token)
+        state.reportOverlay(token, PetHostPlatformState.Unsupported)
+        onDispose { state.releaseOverlay(token) }
+    }
 }
