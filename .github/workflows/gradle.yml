@@ -101,11 +101,14 @@ jobs:
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
-    - name: Run Compose device tests on API 24
+    - name: Run Compose and real host overlay device tests on API 24
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 24
         target: default
         arch: x86_64
         disable-animations: true
-        script: ./gradlew :codex-pets-compose:androidConnectedCheck :codex-pets-host:androidConnectedCheck --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
+        script: |
+          ./gradlew :codex-pets-host:installAndroidDeviceTest --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
+          adb shell appops set com.yet.pets.host.test SYSTEM_ALERT_WINDOW allow
+          ./gradlew :codex-pets-compose:androidConnectedCheck :codex-pets-host:androidConnectedCheck --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
