@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
  * and malformed/truncated inputs fail safely without crashing.
  *
  * PNG/JPEG/GIF fixtures are generated at test time via `javax.imageio` (no
- * binaries); WebP has no JDK encoder, so a minimal 1x1 lossless WebP test
+ * binaries); WebP has no JDK encoder, so a minimal 1x1 VP8 lossy WebP test
  * vector is embedded as Base64.
  */
 class AtlasDecoderFormatTest {
@@ -63,7 +63,8 @@ class AtlasDecoderFormatTest {
 
     @Test
     fun webpDecodesWithExpectedDimensions() {
-        // Minimal 1x1 lossless WebP (VP8L) test vector; no JDK WebP encoder exists.
+        // Minimal 1x1 VP8 lossy WebP; VP8L and VP8X use independent vectors
+        // in the common JVM/iOS format suite.
         val bytes = Base64.decode("UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA")
         assertTrue(bytes.size < 100, "fixture must stay tiny, was ${bytes.size}")
         val decoded = decodeAtlasBytes(bytes)

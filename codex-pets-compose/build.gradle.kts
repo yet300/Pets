@@ -24,6 +24,8 @@ kotlin {
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
+        withDeviceTest {}
+
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
         }
@@ -60,7 +62,27 @@ kotlin {
             // code must never depend on io (verified by source scan + graph).
             implementation(project(":codex-pets-io"))
         }
+
+        named("androidDeviceTest") {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.junit4)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.androidx.test.ext.junit)
+                // Compose smoke on device (real public/state path).
+                implementation(libs.compose.ui.test.junit4)
+                // Force Espresso past the 3.5.0 pulled by compose ui-test:
+                // 3.5.0 calls hidden InputManager.getInstance(), removed on
+                // API 36, which crashes the compose test rule before setContent.
+                implementation(libs.androidx.test.espresso.core)
+                implementation(libs.androidx.compose.ui.test.manifest)
+            }
+        }
     }
+}
+
+tasks.matching { it.name.startsWith("copyAndroidDeviceTestComposeResources") }.configureEach {
+    enabled = false
 }
 
 mavenPublishing {

@@ -26,14 +26,13 @@ internal fun defaultMonotonicNanos(): () -> Long {
 /**
  * Single coherent owner of one pet's rendering/player state.
  *
- * Owns: the [PetDefinition][com.yet.pets.core.PetDefinition], the one decoded
- * atlas image, the requested animation intent, the current
+ * Owns: the [PetDefinition][com.yet.pets.core.PetDefinition], the loading or
+ * decoded atlas image, the requested animation intent, the current
  * [sample][currentSample], and the animation-start timestamp. Consumers never
  * mutate samples, frame indices, or timers directly: animation intent flows in
- * through [CodexPet]'s `animation` parameter (adopted synchronously and
- * idempotently), pacing flows out of core's
+ * through [play], which is called on the Compose/UI thread; pacing flows out of core's
  * [samplePetAnimation][com.yet.pets.core.samplePetAnimation], and the only
- * public controls are [pinToIdle] and [resume].
+ * public controls are [play], [pinToIdle], and [resume].
  *
  * Timing model: elapsed time is measured against a monotonic animation-start
  * timestamp taken from [nowNanos] (monotonic by default). Delays in the
@@ -53,10 +52,30 @@ public class PetPlayerState internal constructor(
     initialAnimation: PetAnimationKey = PetAnimations.Idle,
     internal val nowNanos: () -> Long = defaultMonotonicNanos(),
 ) {
-    internal val atlas: ImageBitmap? = decoded.bitmap
+    internal var atlas: ImageBitmap? by mutableStateOf(decoded.bitmap)
+        private set
 
     /** Decode outcome for the spritesheet bytes (see [PetAtlasState]). */
-    public val atlasState: PetAtlasState = decoded.state
+    public var atlasState: PetAtlasState by mutableStateOf(decoded.state)
+        private set
+
+    /** Publishes a decode only for this state; cancelled effects never call it. */
+    internal fun completeDecode(decoded: DecodedAtlas) {
+        val bitmap = decoded.bitmap
+        if (decoded.state == PetAtlasState.Ready && bitmap != null &&
+            (bitmap.width != definition.geometry.atlasWidth ||
+                bitmap.height != definition.geometry.atlasHeight)
+        ) {
+            atlas = null
+            atlasState = PetAtlasState.Failed(
+                "spritesheet dimensions ${bitmap.width}x${bitmap.height} do not match " +
+                    "${definition.geometry.atlasWidth}x${definition.geometry.atlasHeight}",
+            )
+        } else {
+            atlas = bitmap
+            atlasState = decoded.state
+        }
+    }
 
     private var requestedAnimation: PetAnimationKey = initialAnimation
     private var animationStartNanos: Long = nowNanos()
@@ -84,16 +103,15 @@ public class PetPlayerState internal constructor(
     internal var animationEpoch by mutableIntStateOf(0)
 
     /**
-     * Adopts the latest animation intent. Idempotent: recomposition with the
+     * Changes this state's animation intent. Idempotent: repeating the
      * SAME key is a no-op and never restarts the clock; a changed key records
      * the new intent, bumps [animationEpoch] (restarting the scheduler), and
      * restarts elapsed time from zero — unless static mode is active, in which
      * case the intent is recorded but the display stays pinned until [resume].
      *
-     * Runs synchronously inside [CodexPet] composition (before drawing), so
-     * the first frame already reflects the requested animation.
+     * Call from the Compose/UI thread, as for other snapshot state controls.
      */
-    internal fun adoptAnimation(key: PetAnimationKey) {
+    public fun play(key: PetAnimationKey) {
         if (key == requestedAnimation) return
         requestedAnimation = key
         animationEpoch++
@@ -168,7 +186,8 @@ public class PetPlayerState internal constructor(
      * motion — call [resume] to resume.
      *
      * No OS accessibility-preference detection is implemented in v1; this
-     * explicit control is the cross-platform reduced-motion API.
+     * explicit control is the cross-platform reduced-motion API. Call from
+     * the Compose/UI thread.
      */
     public fun pinToIdle() {
         pinnedState = true
@@ -181,6 +200,7 @@ public class PetPlayerState internal constructor(
      * currently requested animation from elapsed zero (identical semantics to
      * an animation-key change). Calling [resume] while not pinned restarts the
      * current animation from zero as well — always deterministic.
+     * Call from the Compose/UI thread.
      */
     public fun resume() {
         pinnedState = false
@@ -202,5 +222,5 @@ public class PetPlayerState internal constructor(
 internal fun delayMillisForNextFrame(sample: PetPlaybackSample): Long? {
     val nanos = sample.nextFrameInNanos ?: return null
     if (nanos <= 0L) return 1L
-    return (nanos / 1_000_000L).coerceAtLeast(1L)
+    return (nanos / 1_000_000L) + if (nanos % 1_000_000L == 0L) 0L else 1L
 }

@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import com.yet.pets.core.PetAnimationKey
 import kotlin.math.roundToInt
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
@@ -54,19 +53,15 @@ internal data class PetDrawParams(
  * filtering configuration is exposed in v1.
  *
  * @param state player state owning the definition and decoded atlas.
- * @param animation animation intent. Adopted synchronously and idempotently:
- *   the first frame already reflects it; recomposition with the SAME key never
- *   restarts the clock; a changed key cancels the old timer and restarts
- *   elapsed time from zero (see [PetPlayerState.adoptAnimation]).
+ * Animation intent belongs to [PetPlayerState.play]. Renderers sharing a state
+ * observe the same timeline; use separate states for independent timelines.
  * @param modifier applied after the aspect-ratio sizing.
  */
 @Composable
 public fun CodexPet(
     state: PetPlayerState,
-    animation: PetAnimationKey,
     modifier: Modifier = Modifier,
 ) {
-    state.adoptAnimation(animation)
     val epoch = state.animationEpoch
     val pinned = state.isPinned
     LaunchedEffect(state, epoch, pinned) {

@@ -10,6 +10,13 @@ import com.yet.pets.core.PetAnimations
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertIs
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import com.yet.pets.core.PetInputLimits
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 
 /**
  * Compose UI behavior tests (JVM): composition enter/update/leave and the
@@ -23,6 +30,12 @@ import kotlin.test.assertNotNull
 @OptIn(ExperimentalTestApi::class)
 class CodexPetUiTest {
 
+    private fun png(width: Int, height: Int): ByteArray {
+        val out = ByteArrayOutputStream()
+        check(ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY), "png", out))
+        return out.toByteArray()
+    }
+
     @Test
     fun rendererEntersComposition() {
         runComposeUiTest {
@@ -31,7 +44,6 @@ class CodexPetUiTest {
             setContent {
                 CodexPet(
                     state = rememberPetPlayerState(definition, tinyPngBytes),
-                    animation = PetAnimations.Idle,
                 )
             }
             onNodeWithTag(CodexPetTag).assertExists()
@@ -45,9 +57,8 @@ class CodexPetUiTest {
             mainClock.autoAdvance = false
             var virtualNow = 0L
             val player = PetPlayerState(testDefinition(), decodedTinyPng()) { virtualNow }
-            var animation by mutableStateOf(PetAnimations.Idle)
             setContent {
-                CodexPet(state = player, animation = animation)
+                CodexPet(state = player)
             }
             // Pump the first frame: scheduler samples idle at elapsed zero.
             mainClock.advanceTimeBy(100L)
@@ -63,7 +74,7 @@ class CodexPetUiTest {
 
             // Changing the intent restarts elapsed time from zero on the new track:
             // waving frame 0 is sprite 24 (row 3 of the CLI V1 table).
-            animation = PetAnimations.Waving
+            runOnIdle { player.play(PetAnimations.Waving) }
             mainClock.advanceTimeBy(100L)
             runOnIdle {
                 assertEquals(PetAnimations.Waving, player.currentSample.animation)
@@ -80,7 +91,6 @@ class CodexPetUiTest {
                 if (show) {
                     CodexPet(
                         state = rememberPetPlayerState(testDefinition(), tinyPngBytes),
-                        animation = PetAnimations.Running,
                     )
                 }
             }
@@ -123,6 +133,102 @@ class CodexPetUiTest {
             waitForIdle()
             assertEquals(2, decodes)
             assertNotNull(captured)
+        }
+    }
+
+    @Test
+    fun publicStateRejectsMismatchedAtlasAndOversizedBytes() {
+        runComposeUiTest {
+            val definition = testDefinition()
+            var state: PetPlayerState? = null
+            setContent { state = rememberPetPlayerState(definition, tinyPngBytes) }
+            waitUntil(timeoutMillis = 5_000) { state?.atlasState is PetAtlasState.Failed }
+            assertIs<PetAtlasState.Failed>(state?.atlasState)
+            assertEquals(null, state?.drawParamsFor(0))
+        }
+        for ((width, height) in listOf(1535 to 1872, 1536 to 1871)) {
+            runComposeUiTest {
+                val input = png(width, height)
+                var state: PetPlayerState? = null
+                setContent { state = rememberPetPlayerState(testDefinition(), input) }
+                waitUntil(timeoutMillis = 5_000) { state?.atlasState is PetAtlasState.Failed }
+                assertEquals(null, state?.drawParamsFor(0))
+            }
+        }
+        runComposeUiTest {
+            val definition = testDefinition()
+            var decoderCalls = 0
+            var state: PetPlayerState? = null
+            val overLimit = ByteArray(PetInputLimits.MAX_SPRITESHEET_BYTES + 1)
+            setContent {
+                state = rememberPetPlayerState(definition, overLimit) {
+                    decoderCalls++
+                    decodedTinyPng()
+                }
+            }
+            waitUntil(timeoutMillis = 5_000) { state?.atlasState is PetAtlasState.Failed }
+            assertEquals(0, decoderCalls)
+        }
+        for (size in listOf(PetInputLimits.MAX_SPRITESHEET_BYTES - 1, PetInputLimits.MAX_SPRITESHEET_BYTES)) {
+            runComposeUiTest {
+                val input = ByteArray(size)
+                var decoderCalls = 0
+                var state: PetPlayerState? = null
+                setContent {
+                    state = rememberPetPlayerState(testDefinition(), input) {
+                        decoderCalls++
+                        DecodedAtlas(null, PetAtlasState.Failed("test decoder"))
+                    }
+                }
+                waitUntil(timeoutMillis = 5_000) { state?.atlasState is PetAtlasState.Failed }
+                assertEquals(1, decoderCalls, "size $size should reach decoder")
+            }
+        }
+    }
+
+    @Test
+    fun lateDecodeFromReplacedInputCannotPublish() {
+        runComposeUiTest {
+            val entered = CountDownLatch(1)
+            val release = CountDownLatch(1)
+            var bytes by mutableStateOf(tinyPngBytes)
+            val replacement = tinyPngBytes + byteArrayOf(0)
+            var state: PetPlayerState? = null
+            setContent {
+                state = rememberPetPlayerState(testDefinition(), bytes) { encoded ->
+                    if (encoded.size == tinyPngBytes.size) {
+                        entered.countDown()
+                        check(release.await(5, TimeUnit.SECONDS))
+                        DecodedAtlas(null, PetAtlasState.Failed("A"))
+                    } else {
+                        DecodedAtlas(null, PetAtlasState.Failed("B"))
+                    }
+                }
+            }
+            waitUntil(timeoutMillis = 5_000) { entered.count == 0L }
+            bytes = replacement
+            waitUntil(timeoutMillis = 5_000) { state?.atlasState is PetAtlasState.Failed }
+            val current = state
+            assertEquals(PetAtlasState.Failed("B"), current?.atlasState)
+            release.countDown()
+            mainClock.advanceTimeBy(100L)
+            assertEquals(current, state)
+            assertEquals(PetAtlasState.Failed("B"), state?.atlasState)
+        }
+    }
+
+    @Test
+    fun twoRenderersObserveOneExplicitPlaybackIntent() {
+        runComposeUiTest {
+            val player = PetPlayerState(testDefinition(), decodedTinyPng())
+            setContent {
+                CodexPet(player)
+                CodexPet(player)
+            }
+            runOnIdle { player.play(PetAnimations.Waving) }
+            waitForIdle()
+            assertEquals(PetAnimations.Waving, player.currentSample.animation)
+            assertEquals(1, player.animationEpoch)
         }
     }
 }

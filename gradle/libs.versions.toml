@@ -7,6 +7,12 @@ kotlin = "2.4.20"
 kotlinx-serialization = "1.11.0"
 okio = "3.18.2"
 
+# Android on-device verification only (androidInstrumentedTest scope).
+androidx-test-runner = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
+androidx-test-espresso = "3.7.0"
+junit4 = "4.13.2"
+
 vanniktech-maven-publish = "0.36.0"
 
 composeMultiplatform = "1.12.0"
@@ -25,10 +31,17 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # Compose renderer (compose module production scope: runtime + foundation + ui only)
 compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "composeMultiplatform" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "composeMultiplatform" }
 
 # IO
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
+
+# Android device-test scope only (never production)
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
+androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
 
 [plugins]
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }

@@ -3,9 +3,8 @@ package com.yet.pets.compose
 /**
  * Outcome of decoding the encoded spritesheet bytes held by a [PetPlayerState].
  *
- * Decoding is synchronous and runs exactly once per state inputs (see
- * [rememberPetPlayerState]): by the time the state exists the outcome is final,
- * so there is deliberately no `Loading` state.
+ * Decoding runs in a composition-owned background coroutine. A new state
+ * starts as [Loading] and becomes [Ready] or [Failed].
  *
  * Encoded image bytes are foreign input: corrupt, truncated, or unsupported
  * bytes yield [Failed], never a crash. [androidx.compose.ui.graphics.ImageBitmap]
@@ -13,6 +12,9 @@ package com.yet.pets.compose
  * outcome instead.
  */
 public sealed interface PetAtlasState {
+    /** Encoded bytes are awaiting background decode. */
+    public data object Loading : PetAtlasState
+
     /** Exactly one atlas image was decoded and is ready to render. */
     public data object Ready : PetAtlasState
 

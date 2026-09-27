@@ -14,7 +14,7 @@ import kotlin.test.assertIs
  * vendored and no third-party assets are involved.
  */
 internal fun testDefinition(json: String = "{}"): PetDefinition {
-    val outcome = PetPackageParser.parse(
+    val outcome = PetPackageParser.parseTrustedMetadata(
         json,
         "test",
         SpritesheetInfo(1536, 1872, SpritesheetFormat.PNG),

@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 class PetPlayerStateTest {
 
     private fun definition(json: String = "{}"): PetDefinition {
-        val outcome = PetPackageParser.parse(
+        val outcome = PetPackageParser.parseTrustedMetadata(
             json,
             "test",
             SpritesheetInfo(1536, 1872, SpritesheetFormat.PNG),
@@ -65,7 +65,7 @@ class PetPlayerStateTest {
         val atFiveSeconds = samplePetAnimation(definition, PetAnimations.Idle, 5_000_000_000L)
         assertEquals(atFiveSeconds, state.currentSample)
         // Recomposition with the SAME key: no-op, clock untouched.
-        state.adoptAnimation(PetAnimations.Idle)
+        state.play(PetAnimations.Idle)
         assertEquals(atFiveSeconds, state.currentSample)
         assertEquals(0, state.animationEpoch)
     }
@@ -77,7 +77,7 @@ class PetPlayerStateTest {
         val state = state(definition, clock)
         clock.advance(5_000_000_000L)
         state.refresh(clock.now)
-        state.adoptAnimation(PetAnimations.Waving)
+        state.play(PetAnimations.Waving)
         assertEquals(1, state.animationEpoch)
         assertEquals(samplePetAnimation(definition, PetAnimations.Waving, 0L), state.currentSample)
     }
@@ -104,8 +104,10 @@ class PetPlayerStateTest {
         // throwing; sub-millisecond remainders round up to 1 ms.
         assertEquals(1L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = 0L)))
         assertEquals(1L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = -5L)))
+        assertEquals(1L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = 1L)))
         assertEquals(1L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = 999_999L)))
         assertEquals(1L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = 1_000_000L)))
+        assertEquals(2L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = 1_000_001L)))
         assertEquals(1_680L, delayMillisForNextFrame(loopingIdle.copy(nextFrameInNanos = 1_680_000_000L)))
     }
 
@@ -201,7 +203,7 @@ class PetPlayerStateTest {
         val clock = FakeClock()
         val state = state(definition, clock)
         state.pinToIdle()
-        state.adoptAnimation(PetAnimations.Running)
+        state.play(PetAnimations.Running)
         // Still pinned: static idle on screen, no motion.
         assertTrue(state.isPinned)
         assertEquals(staticIdleSpriteIndex(definition), state.currentSample.spriteIndex)
@@ -219,5 +221,16 @@ class PetPlayerStateTest {
         clock.now = 1L
         state.refresh(clock.now)
         assertEquals(samplePetAnimation(definition, PetAnimations.Idle, 0L), state.currentSample)
+    }
+
+    @Test
+    fun separateStatesKeepIndependentIntent() {
+        val definition = definition()
+        val first = state(definition, FakeClock())
+        val second = state(definition, FakeClock())
+        first.play(PetAnimations.Waving)
+        second.play(PetAnimations.Running)
+        assertEquals(PetAnimations.Waving, first.currentSample.animation)
+        assertEquals(PetAnimations.Running, second.currentSample.animation)
     }
 }

@@ -1,6 +1,8 @@
 package com.yet.pets.compose
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.yet.pets.core.EncodedSpritesheetProbe
+import com.yet.pets.core.PetInputLimits
 
 /**
  * Result of the single atlas decode owned by a [PetPlayerState].
@@ -31,24 +33,24 @@ internal data class DecodedAtlas(
  * ([decodePlatformImageBytes]); there is no Coil, no image-loading framework,
  * no network loader, and no public decoder abstraction.
  *
- * Codec notes: Skia (JVM/iOS) decodes JPEG, PNG, GIF, and WebP (lossy and
- * lossless); Android's `BitmapFactory` (minSdk 24) decodes JPEG, PNG, GIF,
- * and WebP via the OS codec. Animated inputs (GIF/WebP) decode to their first
- * frame, which is all the contract needs — a pet uses exactly one static
- * atlas and frames are atlas subregions. Format behavior is verified by the
- * JVM format tests plus the common smoke test (which also executes on iOS
- * simulator); Android-host execution is unavailable in this environment, so
- * the Android path is the canonical two-call platform decode and is covered
- * by compilation plus the shared failure-contract tests.
+ * Static PNG, JPEG, GIF (first frame), and WebP VP8/VP8L/VP8X are accepted.
+ * Animated WebP is rejected by the core metadata probe before platform decode
+ * because Android API 24 cannot decode it. Independent vectors run on JVM,
+ * iOS simulator, and Android API 24/modern device tests.
  *
- * Failure is total and typed: Skiko throws `IllegalArgumentException` on
- * undecodable bytes and `BitmapFactory` returns `null`; both map to
- * [PetAtlasState.Failed]. No platform decoder exception escapes, and the
- * process can never SIGABRT on foreign bytes.
+ * Skiko exceptions and Android `BitmapFactory` null results from undecodable
+ * bytes map to [PetAtlasState.Failed]. This layer cannot guarantee that a
+ * platform's native image codec is safe from process-level faults.
  */
 internal fun decodeAtlasBytes(bytes: ByteArray): DecodedAtlas {
+    if (bytes.size > PetInputLimits.MAX_SPRITESHEET_BYTES) {
+        return DecodedAtlas(null, PetAtlasState.Failed("spritesheet exceeds ${PetInputLimits.MAX_SPRITESHEET_BYTES} bytes"))
+    }
     if (bytes.isEmpty()) {
         return DecodedAtlas(null, PetAtlasState.Failed("empty spritesheet bytes"))
+    }
+    if (EncodedSpritesheetProbe.probe(bytes) == null) {
+        return DecodedAtlas(null, PetAtlasState.Failed("unrecognized, malformed, or animated spritesheet bytes"))
     }
     return try {
         val bitmap = decodePlatformImageBytes(bytes)
