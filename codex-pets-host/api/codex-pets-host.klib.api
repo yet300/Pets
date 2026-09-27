@@ -1,0 +1,58 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.yet.pets:codex-pets-host>
+final enum class com.yet.pets.host/PetHostMode : kotlin/Enum<com.yet.pets.host/PetHostMode> { // com.yet.pets.host/PetHostMode|null[0]
+    enum entry InApp // com.yet.pets.host/PetHostMode.InApp|null[0]
+    enum entry SystemOverlay // com.yet.pets.host/PetHostMode.SystemOverlay|null[0]
+
+    final val entries // com.yet.pets.host/PetHostMode.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.yet.pets.host/PetHostMode> // com.yet.pets.host/PetHostMode.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.yet.pets.host/PetHostMode // com.yet.pets.host/PetHostMode.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.yet.pets.host/PetHostMode> // com.yet.pets.host/PetHostMode.values|values#static(){}[0]
+}
+
+final enum class com.yet.pets.host/PetSystemOverlayAvailability : kotlin/Enum<com.yet.pets.host/PetSystemOverlayAvailability> { // com.yet.pets.host/PetSystemOverlayAvailability|null[0]
+    enum entry Available // com.yet.pets.host/PetSystemOverlayAvailability.Available|null[0]
+    enum entry BestEffort // com.yet.pets.host/PetSystemOverlayAvailability.BestEffort|null[0]
+    enum entry PermissionRequired // com.yet.pets.host/PetSystemOverlayAvailability.PermissionRequired|null[0]
+    enum entry Unsupported // com.yet.pets.host/PetSystemOverlayAvailability.Unsupported|null[0]
+
+    final val entries // com.yet.pets.host/PetSystemOverlayAvailability.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.yet.pets.host/PetSystemOverlayAvailability> // com.yet.pets.host/PetSystemOverlayAvailability.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.yet.pets.host/PetSystemOverlayAvailability // com.yet.pets.host/PetSystemOverlayAvailability.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.yet.pets.host/PetSystemOverlayAvailability> // com.yet.pets.host/PetSystemOverlayAvailability.values|values#static(){}[0]
+}
+
+final class com.yet.pets.host/PetHostState { // com.yet.pets.host/PetHostState|null[0]
+    final var isPinned // com.yet.pets.host/PetHostState.isPinned|{}isPinned[0]
+        final fun <get-isPinned>(): kotlin/Boolean // com.yet.pets.host/PetHostState.isPinned.<get-isPinned>|<get-isPinned>(){}[0]
+    final var isVisible // com.yet.pets.host/PetHostState.isVisible|{}isVisible[0]
+        final fun <get-isVisible>(): kotlin/Boolean // com.yet.pets.host/PetHostState.isVisible.<get-isVisible>|<get-isVisible>(){}[0]
+    final var requestedAnimation // com.yet.pets.host/PetHostState.requestedAnimation|{}requestedAnimation[0]
+        final fun <get-requestedAnimation>(): com.yet.pets.core/PetAnimationKey // com.yet.pets.host/PetHostState.requestedAnimation.<get-requestedAnimation>|<get-requestedAnimation>(){}[0]
+    final var xDp // com.yet.pets.host/PetHostState.xDp|{}xDp[0]
+        final fun <get-xDp>(): kotlin/Float // com.yet.pets.host/PetHostState.xDp.<get-xDp>|<get-xDp>(){}[0]
+    final var yDp // com.yet.pets.host/PetHostState.yDp|{}yDp[0]
+        final fun <get-yDp>(): kotlin/Float // com.yet.pets.host/PetHostState.yDp.<get-yDp>|<get-yDp>(){}[0]
+
+    final fun hide() // com.yet.pets.host/PetHostState.hide|hide(){}[0]
+    final fun moveTo(kotlin/Float, kotlin/Float) // com.yet.pets.host/PetHostState.moveTo|moveTo(kotlin.Float;kotlin.Float){}[0]
+    final fun pinToIdle() // com.yet.pets.host/PetHostState.pinToIdle|pinToIdle(){}[0]
+    final fun play(com.yet.pets.core/PetAnimationKey) // com.yet.pets.host/PetHostState.play|play(com.yet.pets.core.PetAnimationKey){}[0]
+    final fun resume() // com.yet.pets.host/PetHostState.resume|resume(){}[0]
+    final fun show() // com.yet.pets.host/PetHostState.show|show(){}[0]
+}
+
+final val com.yet.pets.host/com_yet_pets_host_PetHostState$stableprop // com.yet.pets.host/com_yet_pets_host_PetHostState$stableprop|#static{}com_yet_pets_host_PetHostState$stableprop[0]
+
+final fun com.yet.pets.host/PetHost(com.yet.pets.core/PetDefinition, kotlin/ByteArray, com.yet.pets.host/PetHostState, com.yet.pets.host/PetHostMode, androidx.compose.ui/Modifier?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // com.yet.pets.host/PetHost|PetHost(com.yet.pets.core.PetDefinition;kotlin.ByteArray;com.yet.pets.host.PetHostState;com.yet.pets.host.PetHostMode;androidx.compose.ui.Modifier?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.yet.pets.host/com_yet_pets_host_PetHostState$stableprop_getter(): kotlin/Int // com.yet.pets.host/com_yet_pets_host_PetHostState$stableprop_getter|com_yet_pets_host_PetHostState$stableprop_getter(){}[0]
+final fun com.yet.pets.host/rememberPetHostState(kotlin/Float, kotlin/Float, com.yet.pets.core/PetAnimationKey?, kotlin/Boolean, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.yet.pets.host/PetHostState // com.yet.pets.host/rememberPetHostState|rememberPetHostState(kotlin.Float;kotlin.Float;com.yet.pets.core.PetAnimationKey?;kotlin.Boolean;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.yet.pets.host/rememberPetSystemOverlayAvailability(androidx.compose.runtime/Composer?, kotlin/Int): com.yet.pets.host/PetSystemOverlayAvailability // com.yet.pets.host/rememberPetSystemOverlayAvailability|rememberPetSystemOverlayAvailability(androidx.compose.runtime.Composer?;kotlin.Int){}[0]
