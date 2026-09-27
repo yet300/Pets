@@ -54,6 +54,16 @@ jobs:
             os: ubuntu-latest
           - target: :codex-pets-compose:checkKotlinAbi
             os: ubuntu-latest
+          - target: :codex-pets-host:iosSimulatorArm64Test
+            os: macos-latest
+          - target: :codex-pets-host:jvmTest
+            os: ubuntu-latest
+          - target: :codex-pets-host:jvmTest
+            os: windows-latest
+          - target: :codex-pets-host:assemble
+            os: ubuntu-latest
+          - target: :codex-pets-host:checkKotlinAbi
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -98,4 +108,4 @@ jobs:
         target: default
         arch: x86_64
         disable-animations: true
-        script: ./gradlew :codex-pets-compose:androidConnectedCheck --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
+        script: ./gradlew :codex-pets-compose:androidConnectedCheck :codex-pets-host:androidConnectedCheck --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g

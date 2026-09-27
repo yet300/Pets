@@ -12,8 +12,15 @@ Pre-release (`0.1.0` is not published).
   archive, and resource checks. It delegates image metadata inspection to core.
 - `:codex-pets-compose` decodes one atlas in a lifecycle-owned background job
   and draws frame subregions. It depends on core, not IO.
+- `:codex-pets-host` (Phase 4: Cross-platform Pet Host) answers where a pet is
+  rendered: `PetHostMode.InApp` (supported on all v1 UI targets) vs.
+  `PetHostMode.SystemOverlay` (platform capability, not a universal KMP
+  guarantee — Android: supported with explicit overlay permission; Desktop:
+  supported / Linux best effort; iOS: unsupported). Depends on
+  `core <- compose <- host`, never on IO. No network, no foreground service,
+  no autonomous behavior.
 - `:codex-pets-apple` builds the single supported Swift-facing `CodexPets`
-  framework, exporting core, IO, and Compose API types with one identity.
+  framework, exporting core, IO, Compose, and Host API types with one identity.
 
 The host owns transport. The library never fetches URLs and includes no
 network or image-loading framework.
@@ -64,6 +71,21 @@ The v1 atlas is static: PNG, JPEG, GIF first frame, and static WebP VP8,
 VP8L, or VP8X are supported. Animated WebP containers are rejected before
 decode on every target. This is a deliberate restriction from the pinned Codex
 CLI dependency, which accepts animated WebP metadata and opens its first frame.
+
+## Pet hosting
+
+```kotlin
+val host = rememberPetHostState()
+val availability = rememberPetSystemOverlayAvailability()
+PetHost(definition, spritesheetBytes, host, PetHostMode.InApp)
+// host.show()/hide()/moveTo()/play()/pinToIdle()/resume()
+```
+
+`InApp` is supported on Android/JVM/iOS. Floating outside the app is a
+platform capability: Android needs `SYSTEM_ALERT_WINDOW`
+(`PermissionRequired` until granted, no silent fallback); Desktop uses a small
+transparent undecorated floating window (Linux best effort); iOS reports
+`Unsupported` and never converts overlay to in-app.
 
 See [security boundaries](SECURITY.md), [architecture](docs/architecture/ARCHITECTURE.md),
 and [audit history](docs/audit/).

@@ -31,6 +31,7 @@ kotlin {
             api(project(":codex-pets-core"))
             api(project(":codex-pets-io"))
             api(project(":codex-pets-compose"))
+            api(project(":codex-pets-host"))
         }
     }
 
@@ -40,6 +41,7 @@ kotlin {
             export(project(":codex-pets-core"))
             export(project(":codex-pets-io"))
             export(project(":codex-pets-compose"))
+            export(project(":codex-pets-host"))
             transitiveExport = false
             consumerXCFramework.add(this)
         }

@@ -50,6 +50,36 @@ Static PNG, JPEG, GIF first frame, and static WebP VP8/VP8L/VP8X are the v1
 image contract. Animated WebP is rejected consistently, including on newer
 decoders that could display its first frame.
 
+## D. Pet host overlay (`:codex-pets-host`)
+
+`PetHost` reuses the Compose public path, so §C protections still apply (8 MiB
+cap, static-format validation, async decode, atlas-dimension check,
+Loading/Ready/Failed). The host adds no image copy and no playback math.
+
+Android `SystemOverlay` is privileged user-approved behavior:
+
+- `SYSTEM_ALERT_WINDOW` is declared only in the opt-in `:codex-pets-host`
+  library manifest (never in core/io/compose); only host consumers inherit it.
+- Missing permission reports `PermissionRequired`, adds no window, and never
+  crashes or silently falls back to in-app. The application owns the Settings
+  request flow; the library never opens Settings from common code.
+- The overlay window is sized near the pet (never fullscreen transparent), so
+  only the pet area receives touch for dragging; no invisible fullscreen touch
+  surface exists. Flags accept drag touch without stealing keyboard focus.
+- No foreground service, no `FOREGROUND_SERVICE`/`BOOT_COMPLETED`/persistent
+  notification/auto-start/resurrection in the library. The overlay lives only
+  while the application process lives; it does not survive process death,
+  force-stop, or reboot, and it never starts automatically.
+- Dragging updates `WindowManager.LayoutParams.x/y` and `PetHostState`
+  together (dp/px via current density); hiding calls `removeView` exactly once
+  (tolerant of an already-detached race).
+
+Desktop `SystemOverlay` is a small transparent undecorated always-on-top
+window containing only the pet (never a fullscreen invisible window, never
+"windowless rendering"). Hiding closes only the pet window. iOS reports
+`Unsupported` and renders nothing rather than abusing PiP/Live
+Activities/notifications/accessibility APIs.
+
 ## Out of scope
 
 The library has no network transport, URL parser, downloader, image authoring
