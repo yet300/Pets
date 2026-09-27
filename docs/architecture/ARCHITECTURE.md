@@ -1,8 +1,7 @@
 # Architecture
 
-Phase 0 architecture for the Kotlin Multiplatform Codex-pets library.
+Current v1 architecture, originally drafted in Phase 0.
 Normative compatibility input: `docs/research/CODEX_COMPATIBILITY.md`.
-No production code is written in this phase.
 
 > **Phase 1 Apple Interop Amendment.** Empirical Apple-interop results changed
 > the public representation (not the upstream contract, which is unchanged):
@@ -45,7 +44,8 @@ database, or any host-owned transport; the library never fetches from the networ
   -> Codex manifest parser          (core: JSON -> raw manifest model, unknown-field tolerant)
   -> compatibility profile          (core, internal: CLI V1 profile; general seam, no invented behavior)
   -> normalized Pet definition      (core: PetDefinition, pure data + geometry, no diagnostics)
-  -> asset loader                   (io: confinement incl. symlinks, limits, spritesheet info probe)
+  -> asset loader                   (optional io: confinement incl. symlinks, ZIP limits)
+  -> encoded image metadata probe  (pure core: static format + dimensions)
   -> platform image decoder         (compose/desktop: ONE atlas ImageBitmap)
   -> renderer                       (compose: drawImage subregions; nanos-based timing in common code)
 ```
@@ -60,13 +60,18 @@ animation-start clock (CLI parity, see PUBLIC_API_PROPOSAL.md §2.1); scheduling
 `PetDefinition`. Platform layers map the resulting sprite index to a source
 rectangle via `AtlasGeometry.sourceRectForOrNull`.
 
-## 3. Module graph (recommended: accept the proposed layout)
+## 3. Module graph
 
 ```text
 :codex-pets-core ← :codex-pets-io   (Okio lives ONLY in io)
-:codex-pets-core ← :codex-pets-compose ← :codex-pets-desktop
-:sample → all
+:codex-pets-core ← :codex-pets-compose
+:codex-pets-apple → core + io + compose  (Apple framework facade only)
 ```
+
+Desktop window helpers and a sample module are future work; Phase 4 has not
+started. `:codex-pets-apple` is the supported single Swift framework. The
+separate layer frameworks are build artifacts and must not be combined as a
+Swift distribution because they duplicate core model identities.
 
 There is no `:codex-pets-network` module in v1. How bytes arrive from the
 network is the host application's responsibility (see §6).
@@ -106,13 +111,12 @@ Comparison of realistic modern-KMP options:
 | kotlinx-io `kotlinx.io.files` | JetBrains, small | Filesystem API experimental/limited per target at cataloged 0.9.1; weaker test fakes; zip story DIY |
 | `java.io.File` / `NSURL` expect/actual | zero deps | one abstraction per platform to design, test, and keep consistent — exactly the cost this decision must avoid |
 
-Decision: **Okio** in `:codex-pets-io` only. Core takes only `ByteArray`s,
-`String`s, and plain `SpritesheetInfo(width, height, format)` data values so it
-never touches files or decoders (this also makes core unit-testable in
-`commonTest` without image codecs). Ownership is one-directional: **io owns the
-internal image probe, produces `SpritesheetInfo` facts from bytes, and passes
-those pure facts into core validation — core never depends on the probe
-itself.** No `java.io`, no `PlatformContext` in public APIs. Canonical
+Decision: **Okio** in `:codex-pets-io` only. Core accepts `ByteArray`s,
+`String`s, and plain `SpritesheetInfo(width, height, format)` values; it owns
+one pure, bounded encoded-image metadata probe. IO delegates to that probe.
+Core performs no pixel decode or filesystem work. The normal public raw-pair
+parser probes metadata internally; `parseTrustedMetadata` accepts caller facts
+only for expert use. No `java.io`, no `PlatformContext` in public APIs. Canonical
 contract: the **public boundary is `String` paths** (`PetLoader.loadPetDirectory(path:
 String, …)`); the **internal filesystem abstraction is Okio `Path`/`FileSystem`
 only**. A public Okio `Path` was empirically rejected after the Apple interop
@@ -129,6 +133,8 @@ public Okio Path for Kotlin aesthetics.
 - Raw bytes are supported only as `(manifestBytes, spritesheetBytes)` pairs or a
   ZIP blob — never a bare manifest without its asset, so "asset exists" stays
   invariant like the CLI's.
+  `PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)` is the
+  bounded io-free pair path (64 KiB manifest, 8 MiB encoded sheet).
 
 ### 5.2 Path confinement (mirrors CLI `resolve_spritesheet_path`, hardened for symlinks)
 

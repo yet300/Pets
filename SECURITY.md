@@ -1,52 +1,63 @@
 # Security Policy — codex-pets-kmp
 
-This library loads **untrusted pet packages** (directories and ZIP archives)
-containing a JSON manifest and an image spritesheet. The boundaries below are
-enforced by `:codex-pets-io` and pinned by permanent regression tests.
+The library accepts foreign pet packages and encoded images. Each public
+untrusted-input path enforces its own boundary; passing data through one layer
+does not grant another layer's guarantees.
 
-## Threat model
+## A. Directory and ZIP packages (`:codex-pets-io`)
 
-- **Path traversal / Zip Slip**: manifest `spritesheetPath` values and ZIP entry
-  names are lexically confined (relative-only; no `..`, absolute paths, drive
-  prefixes, backslashes). Directory targets are additionally canonicalized and
-  required to stay segment-wise inside the canonical package root
-  (`/pkg/foo` never contains `/pkg/foobar`).
-- **Symlink confinement**: symlinks (files and parent directories) resolving
-  inside the package load normally; escapes fail as `PathEscape`; dangling
-  links fail as `DanglingSymlink`/`DanglingManifest`. ZIP symlink entries are
-  rejected unconditionally (`SymlinkEntry`); archives are never extracted, so
-  even an undetected non-Unix symlink representation stays inert payload bytes.
-- **ZIP bombs / resource exhaustion**: enforced caps — manifest 64 KiB,
-  spritesheet 8 MiB, entries ≤ 64, raw archive ≤ 16 MiB (checked before
-  indexing), uncompressed total ≤ 32 MiB, per-entry ≤ 32 MiB, 100× compression
-  tripwire (exact integer arithmetic). Caps apply to central-directory metadata
-  AND to actual bytes read; declared sizes are advisory only.
-- **Archive scope**: stored + deflated entries, single-disk, no ZIP64.
-  Central/local headers are cross-checked (names, method, flags, CRC, sizes);
-  entry ranges must precede the central directory and must not overlap;
-  data-descriptor entries and encrypted entries are rejected; central-directory
-  size is reconciled exactly.
-- **Image handling**: header-only metadata probing (PNG/GIF/JPEG/WebP); no pixel
-  decoding in io. A successful probe is NOT a renderability guarantee — corrupt
-  pixel data fails later at the platform decoder, which is outside this
-  library's load boundary.
-- **TOCTOU**: canonicalization and opening are not atomic. The loader validates,
-  then opens/reads immediately with streaming caps. This stops normal
-  traversal/symlink escapes but is NOT a sandbox against a hostile
-  concurrently-mutated filesystem.
+- Manifest ≤ 64 KiB; encoded sheet ≤ 8 MiB. Actual reads are capped, not just
+  declarations.
+- ZIP: ≤ 64 entries, raw archive ≤ 16 MiB, expanded total and per entry ≤
+  32 MiB, aggregate compression ratio ≤ 100×. Only stored and raw DEFLATE
+  entries are supported. DEFLATE must finish and consume exactly the declared
+  compressed bytes; sizes and CRC must match. Encrypted, descriptor, ZIP64,
+  overlapping, and structurally inconsistent archives fail. Entries are never
+  extracted to disk.
+- Virtual ZIP paths are relative and confined. Directory symlinks resolving
+  within the canonical package root are allowed; escapes and dangling targets
+  fail. Root and asset checks are not atomic against a concurrently mutated
+  filesystem.
+- IO calls core's pure image metadata probe. A successful probe does not prove
+  that all pixels decode.
 
-## What is NOT covered
+## B. Raw manifest and image bytes (`:codex-pets-core`)
 
-Transport/network fetching is host-owned and out of scope: this library never
-fetches bytes from the network, never parses URLs, and ships no HTTP/download/
-redirect/caching code. Image rendering and authoring pixel QA do not exist in
-this library yet (explicit non-goals of Phases 1–2). Do not feed loader outputs
-to decoders without handling decoder errors.
+`PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)` checks
+manifest ≤ 64 KiB and encoded sheet ≤ 8 MiB before parsing/probing. It returns
+typed failures for malformed JSON, image metadata, animated WebP, invalid
+geometry, and compatibility errors. The String and `spritesheetPathOf`
+overloads are also bounded by UTF-8 manifest size. `parseTrustedMetadata` is
+an expert seam: its caller supplies image facts, so it cannot prove that those
+facts match any image bytes.
+
+Raw parsing performs no filesystem/path-confinement or ZIP checks. Applications
+that receive bytes directly supply their own transport and storage policy.
+
+## C. Direct Compose atlas bytes (`:codex-pets-compose`)
+
+`rememberPetPlayerState` checks encoded bytes ≤ 8 MiB before platform decode,
+rejects malformed or animated image metadata, then decodes on a
+composition-owned background coroutine. It publishes `Ready` only if decoded
+pixel dimensions equal `PetDefinition.geometry`; otherwise it publishes
+`Failed` and draws no atlas. Cancellation or input replacement cannot publish
+an old result. The input is a mutable `ByteArray`: the caller keeps it stable
+until the background snapshot is taken. Pass a new array instance to replace
+content. One transient encoded copy is released after decode; one decoded
+atlas is retained by the player state.
+
+Static PNG, JPEG, GIF first frame, and static WebP VP8/VP8L/VP8X are the v1
+image contract. Animated WebP is rejected consistently, including on newer
+decoders that could display its first frame.
+
+## Out of scope
+
+The library has no network transport, URL parser, downloader, image authoring
+QA, or filesystem sandbox against concurrent hostile mutation. Hosts handle
+transport. `CodexPet` is a renderer, not an input parser.
 
 ## Reporting a vulnerability
 
-Do not open a public issue for a suspected vulnerability. Use the repository's
-private vulnerability reporting at `https://github.com/yet300/Pets/security`
-(GitHub private advisories). Include: affected module/version, a minimal
-reproducer (manifest or archive bytes), expected vs actual typed outcome, and
-the host OS/filesystem where observed.
+Use [GitHub private vulnerability reporting](https://github.com/yet300/Pets/security).
+Include the affected module/version, a minimal input reproducer, the expected
+and actual typed outcome, and the host OS/filesystem where applicable.

@@ -1,12 +1,19 @@
-# Public API Proposal (pre-implementation)
+# Public API Contract (updated after Phase 3 remediation)
 
-Module split: `core` (pure) · `io` (okio, optional) ·
-`compose` (renderer) · `desktop` (window helpers). Package root `com.yet.pets.*`.
+Current module split: `core` (pure) · `io` (Okio, optional) ·
+`compose` (renderer) · `apple` (one Swift framework facade). Desktop window
+helpers remain planned, not implemented. Package root `com.yet.pets.*`.
 `explicitApi()` strict from Phase 1. No `ImageBitmap` outside `compose`/`desktop`.
 
 Core dependency budget: Kotlin stdlib + `kotlinx-serialization-json` only.
 No coroutines in core: there are no loaders in core (all I/O lives in
 `io`).
+
+The raw-pair parser accepts ≤64 KiB manifest and ≤8 MiB encoded sheet.
+Compose independently enforces the 8 MiB image cap and decoded geometry.
+Animated WebP containers are rejected at the core probe on every target.
+Swift consumers link only `CodexPets`, which exports one `PetDefinition` type;
+layer frameworks are build artifacts, not a supported combined distribution.
 
 > **Phase 1 Apple Interop Amendment.** Empirical Apple-interop results changed
 > the public representation (not the upstream contract): public
@@ -209,13 +216,14 @@ fun loadPetZip(
 // Core parsing facade (implemented in Phase 1 as PetPackageParser; raw DTOs stay internal):
 // - spritesheetPathOf(manifestJson|Bytes): PetSpritesheetPathOutcome — effective path
 //   (trimmed value or "spritesheet.webp"); no path safety checks (io's job).
-// - parse(manifestJson|Bytes, fallbackId, spritesheet: SpritesheetInfo): PetParseOutcome —
-//   Success(definition, spritesheetPath) or Failure(PetCompatibilityReport).
+// - parse(manifestBytes, spritesheetBytes, fallbackId): bounded public raw-pair
+//   path; probes format/dimensions and validates before returning a definition.
+// - parseTrustedMetadata(manifestJson|Bytes, fallbackId, spritesheet): expert
+//   path for already-probed facts; cannot prove they match actual bytes.
 // Standalone re-check: CodexCompatibilityValidator.validate(definition, spritesheet).
 // normalizePetIdentity(manifestId, displayName, description, fallbackId): PetIdentity.
-// IO-OWNED (lives in :codex-pets-io, never in core): the metadata probe is an
-// INTERNAL header-only parser (internal.image.ImageProbe) with no public probe
-// interface — there is no cross-module decoder abstraction to stabilize.
+// CORE-OWNED: EncodedSpritesheetProbe is the single pure metadata inspector;
+// IO delegates to it. It has no platform decoder or filesystem dependency.
 ```
 
 ### 4.1 Deterministic identity normalization (v1)
@@ -257,10 +265,13 @@ transported.
 // compose — ONE atlas ImageBitmap per pet, subregion draws, lifecycle-safe.
 // Named PetPlayerState (not PetState) to avoid collision with pet/animation-state vocabulary.
 @Composable fun rememberPetPlayerState(definition: PetDefinition, spritesheetBytes: ByteArray): PetPlayerState
-@Composable fun CodexPet(state: PetPlayerState, animation: PetAnimationKey, modifier: Modifier = ...)
+@Composable fun CodexPet(state: PetPlayerState, modifier: Modifier = ...)
 class PetPlayerState {
+    val atlasState: PetAtlasState         // Loading -> Ready | Failed
     val currentSample: PetPlaybackSample  // driven internally by core samplePetAnimation + recompose timer
+    fun play(key: PetAnimationKey)        // explicit state-owned animation intent
     fun pinToIdle()                       // reduced-motion: static first idle frame, timer stopped
+    fun resume()
 }
 
 // desktop — thin overlay helpers over compose
@@ -273,7 +284,6 @@ class PetPlayerState {
 when (val outcome = loadPetZip(zipBytes)) {
     is PetLoadOutcome.Success -> CodexPet(
         state = rememberPetPlayerState(outcome.definition, outcome.spritesheetBytes),
-        animation = PetAnimations.Idle,
     )
     is PetLoadOutcome.Failure ->
         PetLoadErrorPanel(errors = outcome.errors) // never crash on foreign zips

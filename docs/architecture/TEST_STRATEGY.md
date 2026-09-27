@@ -1,5 +1,14 @@
 # Test Strategy (designed before implementation)
 
+> **Current remediation gates (2026-09).** The public raw-pair parser is tested
+> at 64 KiB/8 MiB boundaries without IO or manual metadata. Compose tests
+> cover Loading→Ready/Failed, geometry mismatch, over-limit bytes, input
+> replacement cancellation, explicit state-owned playback, and one atlas draw
+> path. Independent PNG/JPEG/GIF/VP8/VP8L/VP8X vectors run on JVM and iOS;
+> animated WebP is rejected everywhere. Android device tests run at API 24
+> and a modern API locally; CI includes API 24, Windows JVM tests, and an
+> external Swift compile against the single Apple facade framework.
+
 > **Phase 1 Apple Interop Amendment.** Public time is explicitly named nanos
 > `Long` (public `kotlin.time.Duration` is forbidden — it exports its packed
 > `rawValue`); `PetAnimationKey` is a regular class; behavior tests use the

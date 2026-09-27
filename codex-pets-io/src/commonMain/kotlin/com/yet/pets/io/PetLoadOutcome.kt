@@ -8,8 +8,10 @@ import com.yet.pets.core.PetDefinition
  */
 public sealed interface PetLoadOutcome {
     /**
-     * Loaded package. [spritesheetBytes] holds the original bounded encoded
-     * image bytes (never a decoded platform image). Content-based equality.
+     * Loaded package. [spritesheetBytes] is the original bounded encoded
+     * image array, owned by the caller after loading. Keep it unchanged until
+     * Compose snapshots it on its background decoder thread. To replace the
+     * image, pass a new array instance to rememberPetPlayerState.
      */
     public class Success(
         public val definition: PetDefinition,
