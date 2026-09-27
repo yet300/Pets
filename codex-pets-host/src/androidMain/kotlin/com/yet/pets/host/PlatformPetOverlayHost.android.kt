@@ -13,22 +13,38 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.yet.pets.compose.CodexPet
+import com.yet.pets.compose.PetAtlasState
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetDefinition
 
 /**
  * Test seam for the privileged overlay permission. Production uses
- * `Settings.canDrawOverlays`; device tests inject an override because
- * automation cannot reliably grant `SYSTEM_ALERT_WINDOW`. The production
+ * `Settings.canDrawOverlays`; device tests inject an override for permission
+ * transition and add-race cases. The production
  * check is never weakened: a null override always calls the platform API.
  */
 internal object AndroidOverlayPermission {
@@ -77,6 +93,13 @@ internal class RealOverlayWindowOps(
     }
 }
 
+/** Internal observation seam for real device regressions; null in production. */
+internal object AndroidOverlayTestProbe {
+    var windowOpsFactory: ((WindowManager) -> OverlayWindowOps)? = null
+    var onViewCreated: ((ComposeView, OverlayLifecycleOwner, AndroidPetOverlayController) -> Unit)? = null
+    var onAtlasState: ((PetAtlasState) -> Unit)? = null
+}
+
 /**
  * Android overlay controller: owns exactly one small overlay view sized near
  * the pet. Never fullscreen (avoids intercepting unrelated input and invisible
@@ -97,9 +120,9 @@ internal class AndroidPetOverlayController(
         params: WindowManager.LayoutParams,
     ) {
         if (overlayView != null) return
+        windowOps.addView(view, params)
         overlayView = view
         this.params = params
-        windowOps.addView(view, params)
     }
 
     fun moveTo(xPx: Int, yPx: Int) {
@@ -143,13 +166,32 @@ internal fun androidOverlayLayoutParams(
     y = yPx
 }
 
-internal fun dpToPx(dp: Float, density: Float): Int = (dp * density).toInt()
+internal fun dpToPx(dp: Float, density: Float): Int {
+    val scaled = dp.toDouble() * density.toDouble()
+    return when {
+        scaled.isNaN() -> 0
+        scaled >= Int.MAX_VALUE -> Int.MAX_VALUE
+        scaled <= Int.MIN_VALUE -> Int.MIN_VALUE
+        else -> scaled.toInt()
+    }
+}
 
 internal fun pxToDp(px: Float, density: Float): Float = if (density > 0f) px / density else 0f
 
 @Composable
 internal actual fun platformSystemOverlayAvailability(): PetSystemOverlayAvailability {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var resumeGeneration by remember(lifecycleOwner) { mutableIntStateOf(0) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) resumeGeneration++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    // ON_RESUME is the invalidation signal after returning from Settings.
+    @Suppress("UNUSED_VARIABLE") val generation = resumeGeneration
     return if (AndroidOverlayPermission.canDrawOverlays(context)) {
         PetSystemOverlayAvailability.Available
     } else {
@@ -157,50 +199,37 @@ internal actual fun platformSystemOverlayAvailability(): PetSystemOverlayAvailab
     }
 }
 
-private class OverlayLifecycleOwner : androidx.lifecycle.LifecycleOwner {
+internal class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
     private val registry = LifecycleRegistry(this)
+    private val savedStateController = SavedStateRegistryController.create(this)
+    override val viewModelStore: ViewModelStore = ViewModelStore()
+    override val savedStateRegistry: SavedStateRegistry get() = savedStateController.savedStateRegistry
 
     init {
+        savedStateController.performAttach()
+        savedStateController.performRestore(null)
         registry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
     }
 
     fun resume() {
+        if (registry.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         registry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         registry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
-    fun destroy() {
+    fun stop() {
+        if (!registry.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         registry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         registry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+    }
+
+    fun destroy() {
+        stop()
         registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        viewModelStore.clear()
     }
 
     override val lifecycle: Lifecycle get() = registry
-}
-
-/**
- * Attaches [owner] as the view-tree lifecycle owner without a compile-time
- * dependency on the Android-view `ViewTreeLifecycleOwner` class (which has no
- * KMP metadata and is therefore invisible to `androidMain` Kotlin
- * compilation). At runtime the `androidx.lifecycle` AAR is present (Compose
- * brings it transitively), so reflection succeeds on device.
- */
-internal fun attachViewTreeLifecycleOwner(view: View, owner: androidx.lifecycle.LifecycleOwner) {
-    try {
-        val clazz = Class.forName("androidx.lifecycle.ViewTreeLifecycleOwner")
-        val set = clazz.getMethod("set", View::class.java, androidx.lifecycle.LifecycleOwner::class.java)
-        set.invoke(null, view, owner)
-    } catch (_: Exception) {
-        // Fallback: tag-based attach using the runtime resource identifier.
-        val id = view.resources.getIdentifier(
-            "view_tree_lifecycle_owner",
-            "id",
-            "androidx.lifecycle",
-        )
-        if (id != 0) {
-            view.setTag(id, owner)
-        }
-    }
 }
 
 /**
@@ -225,11 +254,7 @@ internal actual fun PlatformPetOverlayHost(
     val context = LocalContext.current
     val applicationContext = context.applicationContext
     val density = LocalDensity.current.density
-
-    if (!AndroidOverlayPermission.canDrawOverlays(context)) {
-        // Permission missing: typed non-crashing empty host, no window added.
-        return
-    }
+    val availability = platformSystemOverlayAvailability()
 
     val cellAspect =
         definition.geometry.cellWidth.toFloat() / definition.geometry.cellHeight.toFloat()
@@ -238,22 +263,26 @@ internal actual fun PlatformPetOverlayHost(
     val widthPx = dpToPx(petWidthDp, density)
     val heightPx = dpToPx(petHeightDp, density)
 
-    DisposableEffect(definition, spritesheetBytes) {
+    var resource by remember(state, definition, spritesheetBytes) {
+        mutableStateOf<AndroidOverlayResource?>(null)
+    }
+    DisposableEffect(state, definition, spritesheetBytes) {
+        val ownerToken = Any()
+        state.claimOverlay(ownerToken)
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val ops = RealOverlayWindowOps(windowManager)
+        val ops = AndroidOverlayTestProbe.windowOpsFactory?.invoke(windowManager) ?: RealOverlayWindowOps(windowManager)
         val controller = AndroidPetOverlayController(ops)
         val lifecycleOwner = OverlayLifecycleOwner()
 
         val composeView = ComposeView(applicationContext).apply {
-            attachViewTreeLifecycleOwner(this, lifecycleOwner)
+            OverlayViewTreeOwners.attach(this, lifecycleOwner)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         }
-        lifecycleOwner.resume()
         composeView.setContent {
             val player = rememberPetPlayerState(definition, spritesheetBytes)
-            LaunchedEffect(state.requestedAnimation) {
+            AndroidOverlayTestProbe.onAtlasState?.invoke(player.atlasState)
+            LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
                 player.play(state.requestedAnimation)
-            }
-            LaunchedEffect(state.isPinned) {
                 if (state.isPinned) player.pinToIdle() else if (player.isPinned) player.resume()
             }
             if (state.isVisible) {
@@ -268,10 +297,7 @@ internal actual fun PlatformPetOverlayHost(
                                 val nextX = state.xDp + dxDp
                                 val nextY = state.yDp + dyDp
                                 state.moveTo(nextX, nextY)
-                                controller.moveTo(
-                                    dpToPx(nextX, viewDensity),
-                                    dpToPx(nextY, viewDensity),
-                                )
+                                controller.moveTo(dpToPx(nextX, viewDensity), dpToPx(nextY, viewDensity))
                             }
                         },
                 ) {
@@ -280,25 +306,57 @@ internal actual fun PlatformPetOverlayHost(
             }
         }
 
-        if (state.isVisible) {
-            val params = androidOverlayLayoutParams(
-                widthPx = widthPx,
-                heightPx = heightPx,
-                xPx = dpToPx(state.xDp, density),
-                yPx = dpToPx(state.yDp, density),
-            )
-            try {
-                controller.show(composeView, params)
-            } catch (_: SecurityException) {
-                // Permission revoked between check and add: typed empty host.
-            } catch (_: WindowManager.BadTokenException) {
-                // Window manager rejected the token: no crash, no window.
-            }
-        }
+        AndroidOverlayTestProbe.onViewCreated?.invoke(composeView, lifecycleOwner, controller)
+        resource = AndroidOverlayResource(controller, composeView, lifecycleOwner, ownerToken)
 
         onDispose {
+            resource = null
             controller.hide()
+            composeView.disposeComposition()
             lifecycleOwner.destroy()
+            state.releaseOverlay(ownerToken)
+        }
+    }
+
+    val desiredVisible = state.isVisible
+    val desiredX = state.xDp
+    val desiredY = state.yDp
+    SideEffect {
+        val current = resource ?: return@SideEffect
+        val controller = current.controller
+        if (!desiredVisible) {
+            controller.hide()
+            current.lifecycleOwner.stop()
+            state.reportOverlay(current.ownerToken, PetHostPlatformState.Hidden)
+        } else if (availability != PetSystemOverlayAvailability.Available) {
+            controller.hide()
+            current.lifecycleOwner.stop()
+            state.reportOverlay(current.ownerToken, PetHostPlatformState.PermissionRequired)
+        } else {
+            val xPx = dpToPx(desiredX, density)
+            val yPx = dpToPx(desiredY, density)
+            if (controller.isShowing()) {
+                val params = controller.currentParams()
+                if (params?.x != xPx || params.y != yPx) controller.moveTo(xPx, yPx)
+            } else {
+                val params = androidOverlayLayoutParams(widthPx, heightPx, xPx, yPx)
+                try {
+                    controller.show(current.composeView, params)
+                    current.lifecycleOwner.resume()
+                    state.reportOverlay(current.ownerToken, PetHostPlatformState.Showing)
+                } catch (_: SecurityException) {
+                    state.reportOverlay(current.ownerToken, PetHostPlatformState.PermissionRequired)
+                } catch (_: WindowManager.BadTokenException) {
+                    state.reportOverlay(current.ownerToken, PetHostPlatformState.PlatformRejected)
+                }
+            }
         }
     }
 }
+
+private class AndroidOverlayResource(
+    val controller: AndroidPetOverlayController,
+    val composeView: ComposeView,
+    val lifecycleOwner: OverlayLifecycleOwner,
+    val ownerToken: Any,
+)

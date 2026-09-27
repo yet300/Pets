@@ -25,6 +25,7 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         withDeviceTest {}
+        withJava()
 
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
@@ -40,6 +41,12 @@ kotlin {
     }
 
     sourceSets {
+        androidMain.dependencies {
+            implementation(libs.androidx.lifecycle.runtime.android)
+            implementation(libs.androidx.lifecycle.runtime.compose.android)
+            implementation(libs.androidx.lifecycle.viewmodel.android)
+            implementation(libs.androidx.savedstate.android)
+        }
         commonMain.dependencies {
             implementation(project(":codex-pets-core"))
             implementation(project(":codex-pets-compose"))
@@ -58,6 +65,10 @@ kotlin {
             // Skiko native runtime for the test host OS (desktop JVM tests
             // execute real Compose UI). Test scope only.
             implementation(compose.desktop.currentOs)
+        }
+
+        iosTest.dependencies {
+            implementation(libs.compose.ui.test)
         }
 
         named("androidDeviceTest") {

@@ -14,6 +14,9 @@ androidx-test-espresso = "3.7.0"
 androidx-test-core = "1.7.0"
 junit4 = "4.13.2"
 
+savedstateAndroid = "1.5.0"
+lifecycleViewmodelAndroid = "2.11.0"
+
 vanniktech-maven-publish = "0.36.0"
 
 composeMultiplatform = "1.12.0"
@@ -31,12 +34,18 @@ compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-previ
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 # Compose renderer (compose module production scope: runtime + foundation + ui only)
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "composeMultiplatform" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "composeMultiplatform" }
 
 # IO
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
+
+androidx-lifecycle-runtime-android = { module = "androidx.lifecycle:lifecycle-runtime-android", version.ref = "lifecycleViewmodelAndroid" }
+androidx-lifecycle-runtime-compose-android = { module = "androidx.lifecycle:lifecycle-runtime-compose-android", version.ref = "lifecycleViewmodelAndroid" }
+androidx-lifecycle-viewmodel-android = { module = "androidx.lifecycle:lifecycle-viewmodel-android", version.ref = "lifecycleViewmodelAndroid" }
+androidx-savedstate-android = { module = "androidx.savedstate:savedstate-android", version.ref = "savedstateAndroid" }
 
 # Android device-test scope only (never production)
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
