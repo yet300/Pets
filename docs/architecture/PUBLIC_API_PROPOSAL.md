@@ -1,9 +1,11 @@
 # Public API Contract (updated after Phase 3 remediation)
 
 Current module split: `core` (pure) · `io` (Okio, optional) ·
-`compose` (renderer) · `apple` (one Swift framework facade). Desktop window
-helpers remain planned, not implemented. Package root `com.yet.pets.*`.
-`explicitApi()` strict from Phase 1. No `ImageBitmap` outside `compose`/`desktop`.
+`compose` (renderer) · `host` (cross-platform pet host, Phase 4) ·
+`apple` (one Swift framework facade). Package root `com.yet.pets.*`.
+`explicitApi()` strict from Phase 1. No `ImageBitmap` outside `compose`/`host`
+rendering paths; no `WindowManager`/`Context`/`UIWindow`/`NSWindow`/`java.awt`
+types in any public API.
 
 Core dependency budget: Kotlin stdlib + `kotlinx-serialization-json` only.
 No coroutines in core: there are no loaders in core (all I/O lives in
@@ -34,7 +36,7 @@ layer frameworks are build artifacts, not a supported combined distribution.
 | Runtime compatibility validation | `CodexCompatibilityValidator` → `PetCompatibilityReport` | pure core, reproduces machine-enforced CLI rules; used by loaders |
 | Authoring QA validation | `CodexAuthoringValidator` → `PetAuthoringReport` | hatch-pet QA recommendations; advisory only, never gates loading |
 | Compose | `PetPlayerState`, `rememberPetPlayerState`, `CodexPet()` | single atlas decode, region draws |
-| Desktop | `PetOverlayWindow`, drag/placement helpers | thin over compose |
+| Host (Phase 4) | `PetHostMode`, `PetSystemOverlayAvailability`, `PetHostState`, `rememberPetHostState`, `rememberPetSystemOverlayAvailability`, `PetHost()` | where a pet is rendered; InApp common on all targets, SystemOverlay via internal expect/actual |
 
 ## 2. Core API (implemented in Phase 1)
 
@@ -250,7 +252,7 @@ downloading `https://example.com/bella.zip` may choose
 `PetLoader.loadPetZip(bytes = bytes, fallbackId = "bella")`, but the library
 never parses URLs.
 
-## 5. Transport / Compose / Desktop API
+## 5. Transport / Compose / Host API
 
 There is NO first-party network module in v1: no `loadPetZipFromUrl`, no
 `DownloadPolicy`, no HTTP-status errors, no redirect policy, no URL-derived
@@ -274,8 +276,16 @@ class PetPlayerState {
     fun resume()
 }
 
-// desktop — thin overlay helpers over compose
-@Composable fun PetOverlayWindow(state: PetPlayerState, ...)
+// host (Phase 4 — Cross-platform Pet Host) — where a pet is rendered, over compose.
+// InApp is common code on all targets; SystemOverlay is a small internal
+// expect/actual seam (Android WindowManager overlay, JVM transparent floating
+// window, iOS Unsupported and never silently converted to InApp).
+enum class PetHostMode { InApp, SystemOverlay }
+enum class PetSystemOverlayAvailability { Available, PermissionRequired, BestEffort, Unsupported }
+class PetHostState { /* visibility, xDp/yDp, requested animation, pinned */ }
+@Composable fun rememberPetHostState(...): PetHostState
+@Composable fun rememberPetSystemOverlayAvailability(): PetSystemOverlayAvailability
+@Composable fun PetHost(definition: PetDefinition, spritesheetBytes: ByteArray, state: PetHostState, mode: PetHostMode, modifier: Modifier = ...)
 ```
 
 ## 6. Primary README example (no `getOrThrow`, untrusted input safe)

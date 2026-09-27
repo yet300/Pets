@@ -25,7 +25,7 @@ Normative compatibility input: `docs/research/CODEX_COMPATIBILITY.md`.
 3. Animation names are open: `PetAnimationKey(value: String)` with typed constants
    for known Codex states. No speculative V2/look-direction types in v1 public API.
 4. There is NO first-party network module in v1 (`core <- io`; `core <- compose
-   <- desktop`). Transport is host-owned: codex-pets-kmp does not own transport
+   <- host`). Transport is host-owned: codex-pets-kmp does not own transport
    (see §6). Consumers that load from URLs fetch bytes with their own stack and
    pass them into core/io/compose APIs.
 5. Exactly one filesystem abstraction across all targets (see §4).
@@ -46,7 +46,7 @@ database, or any host-owned transport; the library never fetches from the networ
   -> normalized Pet definition      (core: PetDefinition, pure data + geometry, no diagnostics)
   -> asset loader                   (optional io: confinement incl. symlinks, ZIP limits)
   -> encoded image metadata probe  (pure core: static format + dimensions)
-  -> platform image decoder         (compose/desktop: ONE atlas ImageBitmap)
+  -> platform image decoder         (compose/host: ONE atlas ImageBitmap)
   -> renderer                       (compose: drawImage subregions; nanos-based timing in common code)
 ```
 
@@ -64,14 +64,16 @@ rectangle via `AtlasGeometry.sourceRectForOrNull`.
 
 ```text
 :codex-pets-core ← :codex-pets-io   (Okio lives ONLY in io)
-:codex-pets-core ← :codex-pets-compose
-:codex-pets-apple → core + io + compose  (Apple framework facade only)
+:codex-pets-core ← :codex-pets-compose ← :codex-pets-host
+:codex-pets-apple → core + io + compose + host  (Apple framework facade only)
 ```
 
-Desktop window helpers and a sample module are future work; Phase 4 has not
-started. `:codex-pets-apple` is the supported single Swift framework. The
-separate layer frameworks are build artifacts and must not be combined as a
-Swift distribution because they duplicate core model identities.
+Phase 4 is the Cross-platform Pet Host (`:codex-pets-host`): `compose`
+answers how a pet is rendered, `host` answers where it is rendered (in-app
+surface vs. system overlay window where the OS permits it). A sample module
+is future work (Phase 5). `:codex-pets-apple` is the supported single Swift
+framework. The separate layer frameworks are build artifacts and must not be
+combined as a Swift distribution because they duplicate core model identities.
 
 There is no `:codex-pets-network` module in v1. How bytes arrive from the
 network is the host application's responsibility (see §6).
@@ -90,15 +92,20 @@ The proposed layout is justified:
   see Okio.
 - `compose`: renderer + state holders. Depends on core only (plus Compose).
   Holds exactly one decoded atlas `ImageBitmap` per pet and draws source regions.
-- `desktop`: JVM/Desktop window/overlay helpers (placement, drag, always-on-top
-  behavior). Depends on compose (+ core transitively). Starts thin; grows only
-  with proven need.
+- `host` (Phase 4 — Cross-platform Pet Host, not "Desktop Helpers"): where a
+  pet is rendered. Common `PetHostState`/`PetHostMode`/`PetHost` plus an
+  in-app host in common code; small internal expect/actual seam for system
+  overlay windows (Android `WindowManager` overlay, JVM transparent floating
+  window, iOS unsupported). Depends on compose (+ core transitively). Must NOT
+  depend on io, Okio, Ktor, Coil, filesystem, or network APIs. Starts thin;
+  grows only with proven need. No autonomous behavior (walking/physics/AI).
 - `sample`: demo apps (android + desktop at minimum). May depend on all.
 
 Dependency direction `core <- io`, `core <- compose`,
-`compose <- desktop` is enforced; `sample` is the only module allowed to span
-layers. Alternative considered (merging `desktop` into `compose`): rejected —
-window management APIs are JVM/Desktop-only and would pollute the shared Compose
+`core <- compose <- host` is enforced (`host` depends on `compose`/`core`,
+never on `io`); `sample` is the only module allowed to span
+layers. Alternative considered (merging `host` into `compose`): rejected —
+window management APIs are platform-specific and would pollute the shared Compose
 API surface and iOS/Android consumers.
 
 ## 4. Filesystem abstraction: exactly one — Okio
@@ -366,7 +373,7 @@ Phase 0 — Contract / Architecture
 Phase 1 — Core
 Phase 2 — IO / Package Loading
 Phase 3 — Compose Renderer
-Phase 4 — Desktop Helpers
+Phase 4 — Cross-platform Pet Host (InApp on all targets; SystemOverlay where the OS permits it)
 Phase 5 — Samples / Publishing / Hardening
 Phase 6 — Final Independent Audit
 ```
