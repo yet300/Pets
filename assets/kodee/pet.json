@@ -1,0 +1,7 @@
+{
+  "id": "kodee",
+  "displayName": "Kodee",
+  "description": "The official Kotlin mascot, a friendly violet companion for coding.",
+  "spriteVersionNumber": 2,
+  "spritesheetPath": "spritesheet.webp"
+}
