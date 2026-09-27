@@ -2,11 +2,6 @@ package com.yet.pets.io.internal.zip
 
 import com.yet.pets.io.AbortWith
 import com.yet.pets.io.PetLoadError
-import okio.Buffer
-import okio.BufferedSource
-import okio.Inflater
-import okio.InflaterSource
-import okio.buffer
 
 /**
  * Entry payload reader: stored slices and raw-deflate inflation with
@@ -64,26 +59,5 @@ private fun readDeflated(archive: ByteArray, entry: ZipEntry, cap: Long): ByteAr
         throw AbortWith(PetLoadError.InvalidArchive("entry ${entry.normalizedPath} is truncated"))
     }
     val compressed = archive.copyOfRange(entry.dataStart.toInt(), entry.dataEnd.toInt())
-    val inflater = Inflater(true)
-    try {
-        val source: BufferedSource = InflaterSource(Buffer().write(compressed), inflater).buffer()
-        val out = Buffer()
-        var total = 0L
-        while (true) {
-            val read = source.read(out, 8192)
-            if (read == -1L) break
-            total += read
-            if (total > cap) {
-                throw AbortWith(
-                    PetLoadError.LimitExceeded(
-                        "entryBytes",
-                        "entry ${entry.normalizedPath} expands beyond $cap bytes",
-                    ),
-                )
-            }
-        }
-        return out.readByteArray()
-    } finally {
-        inflater.end()
-    }
+    return inflateRawExact(compressed, cap)
 }

@@ -28,6 +28,29 @@ private fun zipError(bytes: ByteArray): PetLoadError {
  */
 class ZipConsistencyTest {
 
+    @Test
+    fun deflateRequiresExactDeclaredPayloadConsumption() {
+        val manifest = manifestJson(id = "zip").encodeToByteArray()
+        val sheet = webpVp8Bytes()
+        val valid = deflateRaw(sheet)
+        fun load(payload: ByteArray): PetLoadOutcome = PetLoader.loadPetZip(buildZip(listOf(
+            ZipEntrySpec("pet.json", manifest),
+            ZipEntrySpec("spritesheet.webp", sheet, ZIP_METHOD_DEFLATED, compressedOverride = payload),
+        )))
+        assertIs<PetLoadOutcome.Success>(load(valid))
+        for ((caseIndex, invalid) in listOf(
+            valid + byteArrayOf(0x7f),
+            valid + byteArrayOf(1, 2, 3),
+            valid + deflateRaw(sheet),
+            valid.copyOf(valid.size - 1),
+            valid + ByteArray(8),
+        ).withIndex()) {
+            val outcome = load(invalid)
+            assertIs<PetLoadOutcome.Failure>(outcome, "case $caseIndex")
+            assertIs<PetLoadError.InvalidArchive>(outcome.errors.single())
+        }
+    }
+
     // -- F-02: central/local consistency --
 
     @Test
