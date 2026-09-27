@@ -1,8 +1,7 @@
-package com.yet.pets.io.internal.image
+package com.yet.pets.core.internal.image
 
 import com.yet.pets.core.SpritesheetFormat
 import com.yet.pets.core.SpritesheetInfo
-import com.yet.pets.io.internal.zip.Crc32
 
 private val PNG_SIGNATURE = byteArrayOf(137.toByte(), 80, 78, 71, 13, 10, 26, 10)
 private val PNG_IHDR = "IHDR".encodeToByteArray()
@@ -30,11 +29,22 @@ internal fun probePng(window: ByteWindow): SpritesheetInfo? {
         (payload[7].toLong() and 0xFF)
     if (width <= 0 || height <= 0 || width > 100_000L || height > 100_000L) return null
     val stored = window.slice(at + 8 + 13, 4) ?: return null
-    val computed = Crc32.of(PNG_IHDR + payload)
+    val computed = pngCrc32(PNG_IHDR + payload)
     val storedValue = ((stored[0].toLong() and 0xFF) shl 24) or
         ((stored[1].toLong() and 0xFF) shl 16) or
         ((stored[2].toLong() and 0xFF) shl 8) or
         (stored[3].toLong() and 0xFF)
     if (computed != storedValue) return null
     return SpritesheetInfo(width.toInt(), height.toInt(), SpritesheetFormat.PNG)
+}
+
+private fun pngCrc32(bytes: ByteArray): Long {
+    var crc = 0xFFFFFFFF.toInt()
+    for (byte in bytes) {
+        crc = crc xor (byte.toInt() and 0xFF)
+        repeat(8) {
+            crc = if (crc and 1 != 0) (crc ushr 1) xor 0xEDB88320.toInt() else crc ushr 1
+        }
+    }
+    return (crc xor 0xFFFFFFFF.toInt()).toLong() and 0xFFFFFFFFL
 }

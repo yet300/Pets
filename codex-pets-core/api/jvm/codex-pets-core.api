@@ -23,6 +23,11 @@ public final class com/yet/pets/core/CodexCompatibilityValidator {
 	public final fun validate (Lcom/yet/pets/core/PetDefinition;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetCompatibilityReport;
 }
 
+public final class com/yet/pets/core/EncodedSpritesheetProbe {
+	public static final field INSTANCE Lcom/yet/pets/core/EncodedSpritesheetProbe;
+	public final fun probe ([B)Lcom/yet/pets/core/SpritesheetInfo;
+}
+
 public final class com/yet/pets/core/IdentityKt {
 	public static final fun normalizePetIdentity (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/yet/pets/core/PetIdentity;
 }
@@ -109,6 +114,17 @@ public final class com/yet/pets/core/PetCompatibilityError$FrameCountExceeded : 
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/yet/pets/core/PetCompatibilityError$InputLimitExceeded : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$InputLimitExceeded;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$InputLimitExceeded;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$InputLimitExceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/yet/pets/core/PetCompatibilityError$InvalidFps : com/yet/pets/core/PetCompatibilityError {
 	public fun <init> (Ljava/lang/String;D)V
 	public final fun component1 ()Ljava/lang/String;
@@ -128,6 +144,17 @@ public final class com/yet/pets/core/PetCompatibilityError$InvalidFrameGrid : co
 	public final fun component1 ()Ljava/lang/String;
 	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$InvalidFrameGrid;
 	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$InvalidFrameGrid;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$InvalidFrameGrid;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/yet/pets/core/PetCompatibilityError$InvalidSpritesheetBytes : com/yet/pets/core/PetCompatibilityError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/yet/pets/core/PetCompatibilityError$InvalidSpritesheetBytes;
+	public static synthetic fun copy$default (Lcom/yet/pets/core/PetCompatibilityError$InvalidSpritesheetBytes;Ljava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetCompatibilityError$InvalidSpritesheetBytes;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getMessage ()Ljava/lang/String;
 	public fun hashCode ()I
@@ -260,10 +287,18 @@ public final class com/yet/pets/core/PetIdentity {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/yet/pets/core/PetInputLimits {
+	public static final field INSTANCE Lcom/yet/pets/core/PetInputLimits;
+	public static final field MAX_MANIFEST_BYTES I
+	public static final field MAX_SPRITESHEET_BYTES I
+}
+
 public final class com/yet/pets/core/PetPackageParser {
 	public static final field INSTANCE Lcom/yet/pets/core/PetPackageParser;
-	public final fun parse (Ljava/lang/String;Ljava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetParseOutcome;
-	public final fun parse ([BLjava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetParseOutcome;
+	public final fun parse ([B[BLjava/lang/String;)Lcom/yet/pets/core/PetParseOutcome;
+	public static synthetic fun parse$default (Lcom/yet/pets/core/PetPackageParser;[B[BLjava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetParseOutcome;
+	public final fun parseTrustedMetadata (Ljava/lang/String;Ljava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetParseOutcome;
+	public final fun parseTrustedMetadata ([BLjava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetParseOutcome;
 	public final fun spritesheetPathOf (Ljava/lang/String;)Lcom/yet/pets/core/PetSpritesheetPathOutcome;
 	public final fun spritesheetPathOf ([B)Lcom/yet/pets/core/PetSpritesheetPathOutcome;
 }

@@ -242,6 +242,8 @@ internal class ZipEntrySpec(
     val centralUncompSizeOverride: Long? = null,
     val centralCrcOverride: Long? = null,
     val centralLocalOffsetOverride: Long? = null,
+    /** Exact raw DEFLATE payload override for consumption regressions. */
+    val compressedOverride: ByteArray? = null,
 )
 
 internal fun deflateRaw(data: ByteArray): ByteArray {
@@ -261,7 +263,7 @@ internal fun buildZip(specs: List<ZipEntrySpec>): ByteArray {
         val payload = if (spec.directory) {
             ByteArray(0)
         } else if (spec.method == ZIP_METHOD_DEFLATED) {
-            deflateRaw(spec.data)
+            spec.compressedOverride ?: deflateRaw(spec.data)
         } else {
             spec.data
         }

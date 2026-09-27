@@ -27,23 +27,61 @@ public sealed interface PetParseOutcome {
 }
 
 /**
- * Small stable public facade over the internal manifest DTOs.
- *
- * Phase 2 io calls [spritesheetPathOf] to learn which asset entry/file to
- * resolve, then [parse] with caller-derived identity and io-probed
- * [SpritesheetInfo] facts. Raw DTOs stay internal.
+ * Public facade over internal manifest DTOs. The normal [parse] path accepts
+ * manifest and encoded image bytes, checks both size limits, probes metadata,
+ * and validates. IO may use [spritesheetPathOf] and [parseTrustedMetadata]
+ * after its own bounded package read. Raw DTOs stay internal.
  */
 public object PetPackageParser {
     private val json: Json = Json { ignoreUnknownKeys = true }
 
+    private fun manifestTooLarge(size: Int): PetCompatibilityError.InputLimitExceeded =
+        PetCompatibilityError.InputLimitExceeded(
+            "manifest is $size bytes; maximum is ${PetInputLimits.MAX_MANIFEST_BYTES}",
+        )
+
     /**
-     * Effective manifest-relative spritesheet path: trimmed manifest value,
-     * or `spritesheet.webp` when absent/blank. No path safety checks here.
+     * Bounded public package path for host-owned manifest and image bytes.
+     * Both inputs are checked before metadata inspection or JSON parsing.
+     */
+    public fun parse(
+        manifestBytes: ByteArray,
+        spritesheetBytes: ByteArray,
+        fallbackId: String = "pet",
+    ): PetParseOutcome {
+        if (manifestBytes.size > PetInputLimits.MAX_MANIFEST_BYTES) {
+            return failure(manifestTooLarge(manifestBytes.size))
+        }
+        if (spritesheetBytes.size > PetInputLimits.MAX_SPRITESHEET_BYTES) {
+            return failure(PetCompatibilityError.InputLimitExceeded(
+                "spritesheet is ${spritesheetBytes.size} bytes; maximum is ${PetInputLimits.MAX_SPRITESHEET_BYTES}",
+            ))
+        }
+        val info = EncodedSpritesheetProbe.probe(spritesheetBytes)
+            ?: return failure(PetCompatibilityError.InvalidSpritesheetBytes(
+                "unrecognized, malformed, or animated spritesheet bytes",
+            ))
+        return parseTrustedMetadata(manifestBytes, fallbackId, info)
+    }
+
+    /**
+     * Effective manifest-relative spritesheet path from ≤64 KiB of UTF-8 JSON:
+     * trimmed manifest value or `spritesheet.webp` when absent/blank. No path
+     * confinement checks here.
      */
     public fun spritesheetPathOf(manifestJson: String): PetSpritesheetPathOutcome =
         try {
-            val manifest = json.decodeFromString<CodexPetManifestDto>(manifestJson)
-            PetSpritesheetPathOutcome.Success(effectiveSpritesheetPath(manifest))
+            if (manifestJson.length > PetInputLimits.MAX_MANIFEST_BYTES) {
+                PetSpritesheetPathOutcome.Failure(manifestTooLarge(manifestJson.length))
+            } else {
+                val encodedSize = manifestJson.encodeToByteArray().size
+                if (encodedSize > PetInputLimits.MAX_MANIFEST_BYTES) {
+                    PetSpritesheetPathOutcome.Failure(manifestTooLarge(encodedSize))
+                } else {
+                    val manifest = json.decodeFromString<CodexPetManifestDto>(manifestJson)
+                    PetSpritesheetPathOutcome.Success(effectiveSpritesheetPath(manifest))
+                }
+            }
         } catch (e: SerializationException) {
             PetSpritesheetPathOutcome.Failure(
                 PetCompatibilityError.MalformedManifest("invalid pet manifest: ${e.message}"),
@@ -57,7 +95,11 @@ public object PetPackageParser {
     /** ByteArray overload; bytes are decoded as UTF-8. */
     public fun spritesheetPathOf(manifestBytes: ByteArray): PetSpritesheetPathOutcome =
         try {
-            spritesheetPathOf(manifestBytes.decodeToString())
+            if (manifestBytes.size > PetInputLimits.MAX_MANIFEST_BYTES) {
+                PetSpritesheetPathOutcome.Failure(manifestTooLarge(manifestBytes.size))
+            } else {
+                spritesheetPathOf(manifestBytes.decodeToString(throwOnInvalidSequence = true))
+            }
         } catch (e: Exception) {
             PetSpritesheetPathOutcome.Failure(
                 PetCompatibilityError.MalformedManifest("invalid pet manifest bytes: ${e.message}"),
@@ -65,15 +107,23 @@ public object PetPackageParser {
         }
 
     /**
-     * Full parse + normalize + validate. [fallbackId] is caller-derived
-     * identity (directory/ZIP/URL source); blank normalizes to `"pet"`.
-     * [spritesheet] holds io-probed dimension/format facts.
+     * Expert seam for already-probed, caller-trusted metadata. This does not
+     * prove that [spritesheet] describes any actual image bytes. Ordinary
+     * callers should use the bounded raw-pair [parse] overload instead.
+     * Manifest input remains bounded to 64 KiB here.
      */
-    public fun parse(
+    public fun parseTrustedMetadata(
         manifestJson: String,
         fallbackId: String,
         spritesheet: SpritesheetInfo,
     ): PetParseOutcome {
+        if (manifestJson.length > PetInputLimits.MAX_MANIFEST_BYTES) {
+            return failure(manifestTooLarge(manifestJson.length))
+        }
+        val encodedSize = manifestJson.encodeToByteArray().size
+        if (encodedSize > PetInputLimits.MAX_MANIFEST_BYTES) {
+            return failure(manifestTooLarge(encodedSize))
+        }
         val manifest = try {
             json.decodeFromString<CodexPetManifestDto>(manifestJson)
         } catch (e: SerializationException) {
@@ -84,17 +134,33 @@ public object PetPackageParser {
         return parseManifest(manifest, fallbackId, spritesheet)
     }
 
-    /** ByteArray overload; bytes are decoded as UTF-8. */
-    public fun parse(
+    /** ByteArray variant of [parseTrustedMetadata]; manifest bytes are bounded. */
+    public fun parseTrustedMetadata(
         manifestBytes: ByteArray,
         fallbackId: String,
         spritesheet: SpritesheetInfo,
     ): PetParseOutcome =
         try {
-            parse(manifestBytes.decodeToString(), fallbackId, spritesheet)
+            if (manifestBytes.size > PetInputLimits.MAX_MANIFEST_BYTES) {
+                failure(manifestTooLarge(manifestBytes.size))
+            } else {
+                parseTrustedMetadata(manifestBytes.decodeToString(throwOnInvalidSequence = true), fallbackId, spritesheet)
+            }
         } catch (e: Exception) {
             failure(PetCompatibilityError.MalformedManifest("invalid pet manifest bytes: ${e.message}"))
         }
+
+    internal fun parse(
+        manifestJson: String,
+        fallbackId: String,
+        spritesheet: SpritesheetInfo,
+    ): PetParseOutcome = parseTrustedMetadata(manifestJson, fallbackId, spritesheet)
+
+    internal fun parse(
+        manifestBytes: ByteArray,
+        fallbackId: String,
+        spritesheet: SpritesheetInfo,
+    ): PetParseOutcome = parseTrustedMetadata(manifestBytes, fallbackId, spritesheet)
 
     private fun failure(error: PetCompatibilityError): PetParseOutcome =
         PetParseOutcome.Failure(PetCompatibilityReport(listOf(error)))

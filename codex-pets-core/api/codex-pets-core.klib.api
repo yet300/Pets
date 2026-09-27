@@ -57,6 +57,19 @@ sealed interface com.yet.pets.core/PetCompatibilityError { // com.yet.pets.core/
         final fun toString(): kotlin/String // com.yet.pets.core/PetCompatibilityError.FrameCountExceeded.toString|toString(){}[0]
     }
 
+    final class InputLimitExceeded : com.yet.pets.core/PetCompatibilityError { // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetCompatibilityError.InputLimitExceeded // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InputLimitExceeded.toString|toString(){}[0]
+    }
+
     final class InvalidFps : com.yet.pets.core/PetCompatibilityError { // com.yet.pets.core/PetCompatibilityError.InvalidFps|null[0]
         constructor <init>(kotlin/String, kotlin/Double) // com.yet.pets.core/PetCompatibilityError.InvalidFps.<init>|<init>(kotlin.String;kotlin.Double){}[0]
 
@@ -86,6 +99,19 @@ sealed interface com.yet.pets.core/PetCompatibilityError { // com.yet.pets.core/
         final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetCompatibilityError.InvalidFrameGrid.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // com.yet.pets.core/PetCompatibilityError.InvalidFrameGrid.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InvalidFrameGrid.toString|toString(){}[0]
+    }
+
+    final class InvalidSpritesheetBytes : com.yet.pets.core/PetCompatibilityError { // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetCompatibilityError.InvalidSpritesheetBytes.toString|toString(){}[0]
     }
 
     final class MalformedManifest : com.yet.pets.core/PetCompatibilityError { // com.yet.pets.core/PetCompatibilityError.MalformedManifest|null[0]
@@ -428,6 +454,10 @@ final object com.yet.pets.core/CodexCompatibilityValidator { // com.yet.pets.cor
     final fun validate(com.yet.pets.core/PetDefinition, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetCompatibilityReport // com.yet.pets.core/CodexCompatibilityValidator.validate|validate(com.yet.pets.core.PetDefinition;com.yet.pets.core.SpritesheetInfo){}[0]
 }
 
+final object com.yet.pets.core/EncodedSpritesheetProbe { // com.yet.pets.core/EncodedSpritesheetProbe|null[0]
+    final fun probe(kotlin/ByteArray): com.yet.pets.core/SpritesheetInfo? // com.yet.pets.core/EncodedSpritesheetProbe.probe|probe(kotlin.ByteArray){}[0]
+}
+
 final object com.yet.pets.core/PetAnimations { // com.yet.pets.core/PetAnimations|null[0]
     final val Bounce // com.yet.pets.core/PetAnimations.Bounce|{}Bounce[0]
         final fun <get-Bounce>(): com.yet.pets.core/PetAnimationKey // com.yet.pets.core/PetAnimations.Bounce.<get-Bounce>|<get-Bounce>(){}[0]
@@ -459,9 +489,17 @@ final object com.yet.pets.core/PetAnimations { // com.yet.pets.core/PetAnimation
         final fun <get-Waving>(): com.yet.pets.core/PetAnimationKey // com.yet.pets.core/PetAnimations.Waving.<get-Waving>|<get-Waving>(){}[0]
 }
 
+final object com.yet.pets.core/PetInputLimits { // com.yet.pets.core/PetInputLimits|null[0]
+    final const val MAX_MANIFEST_BYTES // com.yet.pets.core/PetInputLimits.MAX_MANIFEST_BYTES|{}MAX_MANIFEST_BYTES[0]
+        final fun <get-MAX_MANIFEST_BYTES>(): kotlin/Int // com.yet.pets.core/PetInputLimits.MAX_MANIFEST_BYTES.<get-MAX_MANIFEST_BYTES>|<get-MAX_MANIFEST_BYTES>(){}[0]
+    final const val MAX_SPRITESHEET_BYTES // com.yet.pets.core/PetInputLimits.MAX_SPRITESHEET_BYTES|{}MAX_SPRITESHEET_BYTES[0]
+        final fun <get-MAX_SPRITESHEET_BYTES>(): kotlin/Int // com.yet.pets.core/PetInputLimits.MAX_SPRITESHEET_BYTES.<get-MAX_SPRITESHEET_BYTES>|<get-MAX_SPRITESHEET_BYTES>(){}[0]
+}
+
 final object com.yet.pets.core/PetPackageParser { // com.yet.pets.core/PetPackageParser|null[0]
-    final fun parse(kotlin/ByteArray, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/PetPackageParser.parse|parse(kotlin.ByteArray;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
-    final fun parse(kotlin/String, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/PetPackageParser.parse|parse(kotlin.String;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun parse(kotlin/ByteArray, kotlin/ByteArray, kotlin/String = ...): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/PetPackageParser.parse|parse(kotlin.ByteArray;kotlin.ByteArray;kotlin.String){}[0]
+    final fun parseTrustedMetadata(kotlin/ByteArray, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/PetPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.ByteArray;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun parseTrustedMetadata(kotlin/String, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/PetPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.String;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
     final fun spritesheetPathOf(kotlin/ByteArray): com.yet.pets.core/PetSpritesheetPathOutcome // com.yet.pets.core/PetPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.ByteArray){}[0]
     final fun spritesheetPathOf(kotlin/String): com.yet.pets.core/PetSpritesheetPathOutcome // com.yet.pets.core/PetPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.String){}[0]
 }

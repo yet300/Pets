@@ -1,4 +1,4 @@
-package com.yet.pets.io.internal.image
+package com.yet.pets.core.internal.image
 
 /**
  * Tiny bounded byte-window shared by the format probes. Out-of-bounds reads

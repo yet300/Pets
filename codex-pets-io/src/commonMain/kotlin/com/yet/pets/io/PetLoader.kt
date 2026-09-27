@@ -2,6 +2,7 @@ package com.yet.pets.io
 
 import com.yet.pets.core.PetPackageParser
 import com.yet.pets.core.PetParseOutcome
+import com.yet.pets.core.EncodedSpritesheetProbe
 import com.yet.pets.core.SpritesheetInfo
 import com.yet.pets.io.internal.fs.loadPetDirectory as loadPetDirectoryFromFs
 import com.yet.pets.io.internal.fs.platformFileSystem
@@ -64,11 +65,11 @@ internal fun finishLoad(
     fallbackId: String,
     sheetBytes: ByteArray,
 ): PetLoadOutcome {
-    val info: SpritesheetInfo = com.yet.pets.io.internal.image.ImageProbe.probe(sheetBytes)
+    val info: SpritesheetInfo = EncodedSpritesheetProbe.probe(sheetBytes)
         ?: return PetLoadOutcome.Failure(
             PetLoadError.UnsupportedImageFormat("unrecognized or malformed image data"),
         )
-    return when (val parsed = PetPackageParser.parse(manifestBytes, fallbackId, info)) {
+    return when (val parsed = PetPackageParser.parseTrustedMetadata(manifestBytes, fallbackId, info)) {
         is PetParseOutcome.Success -> PetLoadOutcome.Success(parsed.definition, sheetBytes)
         is PetParseOutcome.Failure -> PetLoadOutcome.Failure(
             PetLoadError.CompatibilityFailure(parsed.report),

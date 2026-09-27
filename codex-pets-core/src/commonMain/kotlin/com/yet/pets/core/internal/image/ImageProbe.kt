@@ -1,4 +1,4 @@
-package com.yet.pets.io.internal.image
+package com.yet.pets.core.internal.image
 
 import com.yet.pets.core.SpritesheetFormat
 import com.yet.pets.core.SpritesheetInfo

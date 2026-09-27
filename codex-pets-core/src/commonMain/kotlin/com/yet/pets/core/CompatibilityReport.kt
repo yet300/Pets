@@ -11,6 +11,12 @@ package com.yet.pets.core
 public sealed interface PetCompatibilityError {
     public val message: String
 
+    /** Raw input exceeds the bounded public parser policy. */
+    public data class InputLimitExceeded(override val message: String) : PetCompatibilityError
+
+    /** Encoded image metadata is malformed, unsupported, or animated. */
+    public data class InvalidSpritesheetBytes(override val message: String) : PetCompatibilityError
+
     /** Manifest bytes are not parseable JSON or do not match the schema types. */
     public data class MalformedManifest(override val message: String) : PetCompatibilityError
 
@@ -24,7 +30,7 @@ public sealed interface PetCompatibilityError {
                 "${CodexV1.ATLAS_WIDTH}x${CodexV1.ATLAS_HEIGHT}"
     }
 
-    /** Supplied spritesheet format is not PNG or WebP. */
+    /** Supplied spritesheet format is outside the static PNG/JPEG/GIF/WebP set. */
     public data class UnsupportedSpritesheetFormat(
         public val format: SpritesheetFormat,
     ) : PetCompatibilityError {

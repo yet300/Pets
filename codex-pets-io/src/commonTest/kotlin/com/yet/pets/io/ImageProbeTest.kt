@@ -1,6 +1,6 @@
 package com.yet.pets.io
 
-import com.yet.pets.io.internal.image.ImageProbe
+import com.yet.pets.core.EncodedSpritesheetProbe as ImageProbe
 import com.yet.pets.io.internal.zip.Crc32
 
 import kotlin.test.Test
