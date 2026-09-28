@@ -6,16 +6,22 @@ import com.yet.pets.io.PetLoadError
 /**
  * Deterministic package-shape resolution over normalized entries.
  *
- * - Shape A (root): `pet.json` (or legacy `avatar.json`) at the archive root.
+ * - Shape A (root): `pet.json` (plus legacy `avatar.json` when
+ *   [allowLegacyAvatar]) at the archive root.
  * - Shape B (nested): exactly one top-level directory holding `pet.json`
- *   (or `avatar.json`). Entries nested deeper than one level are not
- *   candidates (mirrors "no descendant search" for directories).
+ *   (plus `avatar.json` when [allowLegacyAvatar]). Entries nested deeper than
+ *   one level are not candidates (mirrors "no descendant search" for
+ *   directories).
  * - `pet.json` is preferred over `avatar.json` in the same directory,
  *   mirroring upstream manifest load order.
  * - Root + nested manifests, or manifests under two different top-level
  *   directories, fail with [PetLoadError.AmbiguousPackage]. The first package
  *   is never silently chosen. No candidate at all fails with
  *   [PetLoadError.MissingManifest].
+ *
+ * Generic Pets KMP packages pass `allowLegacyAvatar = false`: discovery
+ * requires `pet.json` only, and a legacy-only archive reports
+ * [PetLoadError.MissingManifest]. Codex V1 passes `true` for compatibility.
  */
 internal class ResolvedZipPackage(
     val prefix: String,
@@ -26,13 +32,14 @@ internal class ResolvedZipPackage(
 internal fun resolveZipPackage(
     filesByPath: Map<String, ZipEntry>,
     fallbackId: String,
+    allowLegacyAvatar: Boolean,
 ): ResolvedZipPackage {
     val rootPet = filesByPath["pet.json"]
-    val rootAvatar = filesByPath["avatar.json"]
+    val rootAvatar = if (allowLegacyAvatar) filesByPath["avatar.json"] else null
     val nestedGroups = filesByPath.keys
         .mapNotNull { path ->
             val segments = path.split('/')
-            if (segments.size == 2 && (segments[1] == "pet.json" || segments[1] == "avatar.json")) {
+            if (segments.size == 2 && isManifestLeaf(segments[1], allowLegacyAvatar)) {
                 segments[0] to path
             } else {
                 null
@@ -64,6 +71,8 @@ internal fun resolveZipPackage(
     val manifestPath = if ("${group.key}/pet.json" in filesByPath) {
         "${group.key}/pet.json"
     } else {
+        // Reachable only when allowLegacyAvatar is true: generic groups can
+        // only contain pet.json entries.
         "${group.key}/avatar.json"
     }
     return ResolvedZipPackage(
@@ -72,3 +81,6 @@ internal fun resolveZipPackage(
         fallbackId = group.key,
     )
 }
+
+private fun isManifestLeaf(leaf: String, allowLegacyAvatar: Boolean): Boolean =
+    leaf == "pet.json" || (allowLegacyAvatar && leaf == "avatar.json")

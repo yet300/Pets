@@ -38,7 +38,6 @@ class KodeeGenericTest {
         val sheetBytes = repoFile("spritesheet.webp").readBytes()
         val outcome = PetLoader.loadPetsKmpZip(
             buildZipForTest(manifestBytes, sheetBytes),
-            fallbackId = "kodee",
         )
         assertIs<PetLoadOutcome.Success>(outcome, "generic Kodee must load, got $outcome")
         val definition = outcome.definition

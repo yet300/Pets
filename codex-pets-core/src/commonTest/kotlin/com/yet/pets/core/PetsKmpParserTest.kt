@@ -6,13 +6,13 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 private fun petsKmpSuccess(manifestJson: String, info: SpritesheetInfo): PetDefinition {
-    val outcome = PetsKmpPackageParser.parseTrustedMetadata(manifestJson, "test", info)
+    val outcome = PetsKmpPackageParser.parseTrustedMetadata(manifestJson, info)
     assertIs<PetsKmpParseOutcome.Success>(outcome, "expected generic success, got $outcome")
     return outcome.definition
 }
 
 private fun petsKmpFailure(manifestJson: String, info: SpritesheetInfo): PetsKmpReport {
-    val outcome = PetsKmpPackageParser.parseTrustedMetadata(manifestJson, "test", info)
+    val outcome = PetsKmpPackageParser.parseTrustedMetadata(manifestJson, info)
     assertIs<PetsKmpParseOutcome.Failure>(outcome, "expected generic failure, got $outcome")
     return outcome.report
 }

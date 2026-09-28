@@ -27,7 +27,7 @@ class GenericDefaultTest {
               ]
             }
         """.trimIndent()
-        val outcome = PetsKmpPackageParser.parseTrustedMetadata(manifest, "m", info)
+        val outcome = PetsKmpPackageParser.parseTrustedMetadata(manifest, info)
         assertIs<PetsKmpParseOutcome.Success>(outcome)
         return outcome.definition
     }

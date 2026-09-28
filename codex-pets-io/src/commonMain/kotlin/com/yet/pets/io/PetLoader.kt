@@ -71,6 +71,9 @@ public object PetLoader {
      * symlink confinement, CRC checks, DEFLATE consumption, overlap checks,
      * resource limits, duplicate handling); only manifest interpretation
      * differs. No format sniffing.
+     *
+     * Generic discovery requires `pet.json` (no legacy `avatar.json`); generic
+     * identity is manifest-owned, so there is no `fallbackId` parameter.
      */
     public fun loadPetsKmpDirectory(
         path: String,
@@ -90,13 +93,15 @@ public object PetLoader {
     /**
      * Loads a Pets KMP generic v1 ZIP package from bytes. Explicit generic
      * entry point; Codex packages must use [loadPetZip].
+     *
+     * Generic discovery requires `pet.json` (no legacy `avatar.json`); generic
+     * identity is manifest-owned, so there is no `fallbackId` parameter.
      */
     public fun loadPetsKmpZip(
         bytes: ByteArray,
-        fallbackId: String = "pet",
         limits: PetPackageLimits = PetPackageLimits.Default,
     ): PetLoadOutcome = try {
-        loadPetsKmpZipBytes(bytes, fallbackId, limits)
+        loadPetsKmpZipBytes(bytes, limits)
     } catch (e: AbortWith) {
         PetLoadOutcome.Failure(e.error)
     } catch (e: Exception) {
@@ -128,18 +133,17 @@ internal fun finishLoad(
 /**
  * Shared tail for Pets KMP generic v1: probe image facts, then let the generic
  * core parser validate. Same transport/security as [finishLoad]; only manifest
- * interpretation differs.
+ * interpretation differs. Generic identity is manifest-owned (no fallback).
  */
 internal fun finishPetsKmpLoad(
     manifestBytes: ByteArray,
-    fallbackId: String,
     sheetBytes: ByteArray,
 ): PetLoadOutcome {
     val info: SpritesheetInfo = EncodedSpritesheetProbe.probe(sheetBytes)
         ?: return PetLoadOutcome.Failure(
             PetLoadError.UnsupportedImageFormat("unrecognized or malformed image data"),
         )
-    return when (val parsed = PetsKmpPackageParser.parseTrustedMetadata(manifestBytes, fallbackId, info)) {
+    return when (val parsed = PetsKmpPackageParser.parseTrustedMetadata(manifestBytes, info)) {
         is PetsKmpParseOutcome.Success -> PetLoadOutcome.Success(parsed.definition, sheetBytes)
         is PetsKmpParseOutcome.Failure -> PetLoadOutcome.Failure(
             PetLoadError.PetsKmpCompatibilityFailure(parsed.report),

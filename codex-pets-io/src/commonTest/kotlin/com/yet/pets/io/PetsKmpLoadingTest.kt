@@ -38,7 +38,7 @@ class PetsKmpLoadingTest {
                 ZipEntrySpec("spritesheet.webp", sheet),
             ),
         )
-        val outcome = PetLoader.loadPetsKmpZip(zip, fallbackId = "tiny")
+        val outcome = PetLoader.loadPetsKmpZip(zip)
         assertIs<PetLoadOutcome.Success>(outcome)
         assertEquals(3, outcome.definition.geometry.columns)
         assertEquals(2, outcome.definition.geometry.rows)

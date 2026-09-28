@@ -66,7 +66,7 @@ private fun loadPetDirectoryOrThrow(
     root: Path,
     limits: PetPackageLimits,
 ): PetLoadOutcome {
-    val shared = readSharedDirectoryPackage(fileSystem, root, limits)
+    val shared = readSharedDirectoryPackage(fileSystem, root, limits, allowLegacyAvatar = true)
     val relPath = when (val pathOutcome = PetPackageParser.spritesheetPathOf(shared.manifestBytes)) {
         is PetSpritesheetPathOutcome.Success -> pathOutcome.path
         is PetSpritesheetPathOutcome.Failure ->
@@ -82,7 +82,9 @@ private fun loadPetsKmpDirectoryOrThrow(
     root: Path,
     limits: PetPackageLimits,
 ): PetLoadOutcome {
-    val shared = readSharedDirectoryPackage(fileSystem, root, limits)
+    // Generic packages are OUR new format: discovery requires pet.json only,
+    // never the Codex legacy avatar.json.
+    val shared = readSharedDirectoryPackage(fileSystem, root, limits, allowLegacyAvatar = false)
     val relPath = when (val pathOutcome = PetsKmpPackageParser.spritesheetPathOf(shared.manifestBytes)) {
         is PetsKmpSpritesheetPathOutcome.Success -> pathOutcome.path
         is PetsKmpSpritesheetPathOutcome.Failure ->
@@ -90,13 +92,16 @@ private fun loadPetsKmpDirectoryOrThrow(
     }
     checkManifestRelativePath(relPath)
     val sheetBytes = readSharedDirectoryAsset(fileSystem, shared, relPath, limits)
-    return finishPetsKmpLoad(shared.manifestBytes, shared.fallbackId, sheetBytes)
+    return finishPetsKmpLoad(shared.manifestBytes, sheetBytes)
 }
 
 /**
  * Shared secure directory package reader: limits check, canonical root,
  * deterministic manifest discovery, and bounded manifest read. Single
- * canonical implementation for both Codex V1 and Pets KMP generic packages.
+ * canonical implementation for both Codex V1 and Pets KMP generic packages;
+ * only the manifest discovery policy ([allowLegacyAvatar]) differs by format.
+ * All traversal, symlink, canonical-containment, and bounded-read security is
+ * shared, never duplicated.
  */
 internal class SharedDirectoryPackage(
     val manifestBytes: ByteArray,
@@ -108,6 +113,7 @@ internal fun readSharedDirectoryPackage(
     fileSystem: FileSystem,
     root: Path,
     limits: PetPackageLimits,
+    allowLegacyAvatar: Boolean,
 ): SharedDirectoryPackage {
     limits.invalidReason()?.let { throw AbortWith(it) }
     val canonicalRoot = try {
@@ -118,10 +124,15 @@ internal fun readSharedDirectoryPackage(
 
     val manifestPath = when (val pet = locateManifest(fileSystem, canonicalRoot, "pet.json")) {
         is ManifestLocation.Found -> pet.path
-        is ManifestLocation.Absent -> when (val avatar = locateManifest(fileSystem, canonicalRoot, "avatar.json")) {
-            is ManifestLocation.Found -> avatar.path
-            is ManifestLocation.Absent ->
+        is ManifestLocation.Absent -> {
+            if (!allowLegacyAvatar) {
                 throw AbortWith(PetLoadError.MissingManifest(canonicalRoot.toString()))
+            }
+            when (val avatar = locateManifest(fileSystem, canonicalRoot, "avatar.json")) {
+                is ManifestLocation.Found -> avatar.path
+                is ManifestLocation.Absent ->
+                    throw AbortWith(PetLoadError.MissingManifest(canonicalRoot.toString()))
+            }
         }
     }
 

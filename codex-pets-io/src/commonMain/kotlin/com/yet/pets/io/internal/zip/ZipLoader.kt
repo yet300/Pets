@@ -40,14 +40,14 @@ internal fun loadZipBytes(
 /**
  * Pets KMP generic v1 ZIP entry point. Shares the identical secure archive
  * implementation with [loadZipBytes]; only path extraction and final parsing
- * differ. No second ZIP implementation exists.
+ * differ. No second ZIP implementation exists. Generic identity is
+ * manifest-owned, so there is no `fallbackId` parameter.
  */
 internal fun loadPetsKmpZipBytes(
     bytes: ByteArray,
-    fallbackId: String,
     limits: PetPackageLimits,
 ): PetLoadOutcome = try {
-    loadPetsKmpZipOrThrow(bytes, fallbackId, limits)
+    loadPetsKmpZipOrThrow(bytes, limits)
 } catch (e: AbortWith) {
     PetLoadOutcome.Failure(e.error)
 } catch (e: Exception) {
@@ -59,7 +59,7 @@ private fun loadZipOrThrow(
     fallbackId: String,
     limits: PetPackageLimits,
 ): PetLoadOutcome {
-    val pkg = readSharedZipPackage(bytes, fallbackId, limits)
+    val pkg = readSharedZipPackage(bytes, fallbackId, limits, allowLegacyAvatar = true)
     val manifestBytes = readZipEntryData(
         bytes,
         pkg.manifestEntry,
@@ -78,10 +78,13 @@ private fun loadZipOrThrow(
 
 private fun loadPetsKmpZipOrThrow(
     bytes: ByteArray,
-    fallbackId: String,
     limits: PetPackageLimits,
 ): PetLoadOutcome {
-    val pkg = readSharedZipPackage(bytes, fallbackId, limits)
+    // Generic packages are OUR new format: discovery requires pet.json only
+    // (never the Codex legacy avatar.json), and identity is manifest-owned.
+    // The shared resolver still takes a root-shape label for its
+    // Codex-oriented result type; it is never used for generic identity.
+    val pkg = readSharedZipPackage(bytes, "pet", limits, allowLegacyAvatar = false)
     val manifestBytes = readZipEntryData(
         bytes,
         pkg.manifestEntry,
@@ -95,13 +98,16 @@ private fun loadPetsKmpZipOrThrow(
     }
     checkManifestRelativePath(relPath)
     val sheetBytes = readSharedZipAsset(bytes, pkg, relPath, pkg.byPath, limits)
-    return finishPetsKmpLoad(manifestBytes, pkg.resolved.fallbackId, sheetBytes)
+    return finishPetsKmpLoad(manifestBytes, sheetBytes)
 }
 
 /**
  * Shared secure ZIP package resolution: raw cap, structural parse, collision
  * and symlink/encryption checks, and package-shape resolution. Single
- * canonical implementation for both Codex V1 and Pets KMP generic packages.
+ * canonical implementation for both Codex V1 and Pets KMP generic packages;
+ * only the manifest discovery policy ([allowLegacyAvatar]) differs by format.
+ * All traversal, CRC, overlap, limit, and duplicate security is shared, never
+ * duplicated.
  */
 internal class SharedZipPackage(
     val resolved: ResolvedZipPackage,
@@ -113,6 +119,7 @@ internal fun readSharedZipPackage(
     bytes: ByteArray,
     fallbackId: String,
     limits: PetPackageLimits,
+    allowLegacyAvatar: Boolean,
 ): SharedZipPackage {
     limits.invalidReason()?.let { throw AbortWith(it) }
     // Raw cap BEFORE indexing: over-limit blobs fail without central-directory work.
@@ -151,7 +158,7 @@ internal fun readSharedZipPackage(
     for (entry in files) {
         byPath[entry.normalizedPath] = entry
     }
-    val resolved = resolveZipPackage(byPath, fallbackId)
+    val resolved = resolveZipPackage(byPath, fallbackId, allowLegacyAvatar)
     return SharedZipPackage(resolved, resolved.manifestEntry, byPath)
 }
 

@@ -66,11 +66,13 @@ public object PetsKmpPackageParser {
      * Enforces the manifest cap, the spritesheet byte cap, probes image
      * dimensions/format through the authoritative core probe, then parses and
      * validates the generic manifest.
+     *
+     * Generic identity is manifest-owned (`id` is required): there is no
+     * caller-supplied fallback identity, unlike the Codex adapter.
      */
     public fun parse(
         manifestBytes: ByteArray,
         spritesheetBytes: ByteArray,
-        fallbackId: String = "pet",
     ): PetsKmpParseOutcome {
         if (manifestBytes.size > PetInputLimits.MAX_MANIFEST_BYTES) {
             return failure(manifestTooLarge(manifestBytes.size))
@@ -89,7 +91,7 @@ public object PetsKmpPackageParser {
                     "unrecognized, malformed, or animated spritesheet bytes",
                 ),
             )
-        return parseTrustedMetadata(manifestBytes, fallbackId, info)
+        return parseTrustedMetadata(manifestBytes, info)
     }
 
     /**
@@ -148,7 +150,6 @@ public object PetsKmpPackageParser {
      */
     public fun parseTrustedMetadata(
         manifestJson: String,
-        fallbackId: String,
         spritesheet: SpritesheetInfo,
     ): PetsKmpParseOutcome {
         if (manifestJson.length > PetInputLimits.MAX_MANIFEST_BYTES) {
@@ -175,13 +176,12 @@ public object PetsKmpPackageParser {
         } catch (e: IllegalArgumentException) {
             return failure(PetsKmpError.MalformedManifest("invalid pet manifest: ${e.message}"))
         }
-        return parseManifest(manifest, fallbackId, spritesheet)
+        return parseManifest(manifest, spritesheet)
     }
 
     /** ByteArray variant of [parseTrustedMetadata]; manifest bytes are bounded. */
     public fun parseTrustedMetadata(
         manifestBytes: ByteArray,
-        fallbackId: String,
         spritesheet: SpritesheetInfo,
     ): PetsKmpParseOutcome =
         try {
@@ -190,7 +190,6 @@ public object PetsKmpPackageParser {
             } else {
                 parseTrustedMetadata(
                     manifestBytes.decodeToString(throwOnInvalidSequence = true),
-                    fallbackId,
                     spritesheet,
                 )
             }
@@ -320,7 +319,6 @@ public object PetsKmpPackageParser {
 
     internal fun parseManifest(
         manifest: PetsKmpManifestDto,
-        fallbackId: String,
         spritesheet: SpritesheetInfo,
     ): PetsKmpParseOutcome {
         val errors = mutableListOf<PetsKmpError>()
@@ -527,11 +525,15 @@ public object PetsKmpPackageParser {
         }
 
         return try {
+            // Generic identity is manifest-owned: id/displayName are required
+            // (missing values already failed above), so no caller-supplied
+            // fallback identity exists. The required manifest id doubles as
+            // the normalizer fallback, which is unreachable in practice.
             val identity = normalizePetIdentity(
                 manifestId = rawId,
                 displayName = rawDisplayName,
                 description = manifest.description,
-                fallbackId = fallbackId,
+                fallbackId = rawId ?: "pet",
             )
             val definition = PetDefinition(
                 id = identity.id,

@@ -37,7 +37,6 @@ class GenericPlayerStateTest {
         """.trimIndent()
         val outcome = PetsKmpPackageParser.parseTrustedMetadata(
             manifest,
-            "g",
             SpritesheetInfo(96, 80, SpritesheetFormat.PNG),
         )
         assertIs<PetsKmpParseOutcome.Success>(outcome)

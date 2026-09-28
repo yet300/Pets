@@ -37,7 +37,7 @@ class KodeeGenericUiTest {
     fun kodeeGenericReachesReadyAndRendersIdleThenWave() {
         val manifestBytes = repoFile("pet.pets-kmp.json").readBytes()
         val sheetBytes = repoFile("spritesheet.webp").readBytes()
-        val parsed = PetsKmpPackageParser.parse(manifestBytes, sheetBytes, "kodee")
+        val parsed = PetsKmpPackageParser.parse(manifestBytes, sheetBytes)
         val success = assertIs<PetsKmpParseOutcome.Success>(parsed, "generic Kodee must parse, got $parsed")
         val definition = success.definition
         assertEquals(1536, definition.geometry.atlasWidth)
