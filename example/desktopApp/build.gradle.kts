@@ -18,6 +18,7 @@ dependencies {
 compose.desktop {
     application {
         mainClass = "com.pets.example.MainKt"
+        System.getenv("PETS_EXAMPLE_JAVA_HOME")?.let { javaHome = it }
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

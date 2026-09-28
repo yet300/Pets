@@ -1,0 +1,72 @@
+{
+  "schema": "pets-kmp",
+  "schemaVersion": 1,
+  "id": "kodee",
+  "displayName": "Kodee",
+  "description": "The official Kotlin mascot, a friendly violet companion for coding.",
+  "spritesheetPath": "spritesheet.webp",
+  "frame": {
+    "width": 192,
+    "height": 208
+  },
+  "defaultAnimation": "idle",
+  "animations": [
+    {
+      "key": "idle",
+      "loopStart": 0,
+      "frames": [
+        { "index": 0, "durationMs": 1680 },
+        { "index": 1, "durationMs": 660 },
+        { "index": 2, "durationMs": 660 },
+        { "index": 3, "durationMs": 840 },
+        { "index": 4, "durationMs": 840 },
+        { "index": 5, "durationMs": 1920 }
+      ]
+    },
+    {
+      "key": "wave",
+      "loopStart": 0,
+      "frames": [
+        { "index": 24, "durationMs": 140 },
+        { "index": 25, "durationMs": 140 },
+        { "index": 26, "durationMs": 140 },
+        { "index": 27, "durationMs": 280 }
+      ]
+    },
+    {
+      "key": "jump",
+      "loopStart": 0,
+      "frames": [
+        { "index": 32, "durationMs": 140 },
+        { "index": 33, "durationMs": 140 },
+        { "index": 34, "durationMs": 140 },
+        { "index": 35, "durationMs": 140 },
+        { "index": 36, "durationMs": 280 }
+      ]
+    },
+    {
+      "key": "happy",
+      "loopStart": 0,
+      "frames": [
+        { "index": 64, "durationMs": 150 },
+        { "index": 65, "durationMs": 150 },
+        { "index": 66, "durationMs": 150 },
+        { "index": 67, "durationMs": 150 },
+        { "index": 68, "durationMs": 150 },
+        { "index": 69, "durationMs": 280 }
+      ]
+    },
+    {
+      "key": "rest",
+      "loopStart": 0,
+      "frames": [
+        { "index": 48, "durationMs": 150 },
+        { "index": 49, "durationMs": 150 },
+        { "index": 50, "durationMs": 150 },
+        { "index": 51, "durationMs": 150 },
+        { "index": 52, "durationMs": 150 },
+        { "index": 53, "durationMs": 260 }
+      ]
+    }
+  ]
+}
