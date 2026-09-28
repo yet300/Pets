@@ -2,6 +2,11 @@ package com.yet.pets.core
 
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Outcome of resolving the effective manifest-relative spritesheet path for a
@@ -153,8 +158,18 @@ public object PetsKmpPackageParser {
         if (encodedSize > PetInputLimits.MAX_MANIFEST_BYTES) {
             return failure(manifestTooLarge(encodedSize))
         }
+        // Single generic-format-only strict decode: parse once to a tree,
+        // enforce v1 integer lexical syntax, then decode the same tree.
+        val root = try {
+            json.parseToJsonElement(manifestJson)
+        } catch (e: SerializationException) {
+            return failure(PetsKmpError.MalformedManifest("invalid pet manifest: ${e.message}"))
+        } catch (e: IllegalArgumentException) {
+            return failure(PetsKmpError.MalformedManifest("invalid pet manifest: ${e.message}"))
+        }
+        strictJsonIntegers(root)?.let { return failure(it) }
         val manifest = try {
-            json.decodeFromString<PetsKmpManifestDto>(manifestJson)
+            json.decodeFromJsonElement(PetsKmpManifestDto.serializer(), root)
         } catch (e: SerializationException) {
             return failure(PetsKmpError.MalformedManifest("invalid pet manifest: ${e.message}"))
         } catch (e: IllegalArgumentException) {
@@ -182,6 +197,104 @@ public object PetsKmpPackageParser {
         } catch (e: Exception) {
             failure(PetsKmpError.MalformedManifest("invalid pet manifest bytes: ${e.message}"))
         }
+
+    /**
+     * Pets KMP v1 strict integer grammar: every integer field MUST be an
+     * unquoted JSON integer token matching `-?(0|[1-9][0-9]*)`, then satisfy
+     * its semantic range. Rejects quoted numbers (`"1"`), decimals (`1.0`),
+     * exponents (`1e0`, `1E+0`), booleans, and out-of-range values with a
+     * deterministic format-owned [PetsKmpError.MalformedManifest].
+     *
+     * Generic-format-only: the Codex DTO path is untouched. Missing members
+     * and explicit nulls are left to semantic validation (which maps them to
+     * typed errors); structurally unexpected shapes are left to the DTO
+     * decoder (which reports [PetsKmpError.MalformedManifest]). Never throws.
+     */
+    private fun strictJsonIntegers(root: JsonElement): PetsKmpError? {
+        val obj = root as? JsonObject
+            ?: return PetsKmpError.MalformedManifest(
+                "invalid pet manifest: expected a JSON object (Pets KMP v1 strict integers)",
+            )
+        checkStrictIntMember(obj, "schemaVersion", IntKind.INT)?.let { return it }
+        val frame = obj["frame"]
+        if (frame is JsonObject) {
+            checkStrictIntMember(frame, "width", IntKind.INT, "frame.width")?.let { return it }
+            checkStrictIntMember(frame, "height", IntKind.INT, "frame.height")?.let { return it }
+        }
+        val animations = obj["animations"]
+        if (animations is JsonArray) {
+            for ((animationIndex, entry) in animations.withIndex()) {
+                if (entry !is JsonObject) continue
+                val prefix = "animations[$animationIndex]"
+                checkStrictIntMember(entry, "loopStart", IntKind.INT, "$prefix.loopStart")?.let { return it }
+                val frames = entry["frames"]
+                if (frames is JsonArray) {
+                    for ((frameIndex, frameEntry) in frames.withIndex()) {
+                        if (frameEntry !is JsonObject) continue
+                        val framePrefix = "$prefix.frames[$frameIndex]"
+                        checkStrictIntMember(frameEntry, "index", IntKind.INT, "$framePrefix.index")
+                            ?.let { return it }
+                        checkStrictIntMember(frameEntry, "durationMs", IntKind.LONG, "$framePrefix.durationMs")
+                            ?.let { return it }
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    private enum class IntKind { INT, LONG }
+
+    private fun checkStrictIntMember(
+        obj: JsonObject,
+        name: String,
+        kind: IntKind,
+        label: String = name,
+    ): PetsKmpError? {
+        val value = obj[name] ?: return null
+        if (value is JsonNull) return null
+        val primitive = value as? JsonPrimitive
+            ?: return strictIntegerFailure(label, "must be an integer")
+        if (primitive.isString) {
+            return strictIntegerFailure(label, "must be an unquoted JSON integer")
+        }
+        val text = primitive.content
+        if (!isStrictIntegerToken(text)) {
+            return strictIntegerFailure(label, "must use integer syntax -?(0|[1-9][0-9]*)")
+        }
+        val inRange = when (kind) {
+            IntKind.INT -> text.toIntOrNull() != null
+            IntKind.LONG -> text.toLongOrNull() != null
+        }
+        if (!inRange) return strictIntegerFailure(label, "integer out of range")
+        return null
+    }
+
+    private fun strictIntegerFailure(label: String, why: String): PetsKmpError.MalformedManifest =
+        PetsKmpError.MalformedManifest(
+            "invalid pet manifest: $label $why (Pets KMP v1 strict integers)",
+        )
+
+    /**
+     * Lexical check for `-?(0|[1-9][0-9]*)`: linear scan, no regex, no
+     * backtracking. Range is checked separately via `toIntOrNull`/`toLongOrNull`.
+     */
+    private fun isStrictIntegerToken(text: String): Boolean {
+        if (text.isEmpty()) return false
+        var index = 0
+        if (text[0] == '-') {
+            if (text.length == 1) return false
+            index = 1
+        }
+        if (text[index] == '0') return index + 1 == text.length
+        if (text[index] !in '1'..'9') return false
+        index++
+        while (index < text.length) {
+            if (text[index] !in '0'..'9') return false
+            index++
+        }
+        return true
+    }
 
     private fun failure(error: PetsKmpError): PetsKmpParseOutcome =
         PetsKmpParseOutcome.Failure(PetsKmpReport(listOf(error)))
