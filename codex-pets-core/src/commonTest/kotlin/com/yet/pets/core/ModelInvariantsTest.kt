@@ -15,13 +15,19 @@ class ModelInvariantsTest {
         assertEquals(PetAnimationKey("dance").hashCode(), PetAnimationKey("dance").hashCode())
         assertEquals("PetAnimationKey(value=dance)", PetAnimationKey("dance").toString())
         assertTrue(PetAnimationKey("dance") != PetAnimationKey("idle"))
-        // Arbitrary valid names (sleep, eat, dance, happy, spin, …) need no
-        // library change; blank and overlong keys are rejected.
+        // Generic normalized identifier: arbitrary values need no library
+        // change and carry no format restrictions at this layer. Format rules
+        // (Pets KMP trim/non-blank, Codex upstream acceptance) live in each
+        // adapter's own normalization, never here.
         assertEquals("dance", PetAnimationKey("dance").value)
-        assertFailsWith<IllegalArgumentException> { PetAnimationKey("") }
-        assertFailsWith<IllegalArgumentException> { PetAnimationKey("   ") }
-        assertFailsWith<IllegalArgumentException> { PetAnimationKey("a".repeat(65)) }
+        assertEquals("", PetAnimationKey("").value)
+        assertEquals("   ", PetAnimationKey("   ").value)
         assertEquals("a".repeat(64), PetAnimationKey("a".repeat(64)).value)
+        assertEquals("a".repeat(65), PetAnimationKey("a".repeat(65)).value)
+        assertEquals("a".repeat(1000), PetAnimationKey("a".repeat(1000)).value)
+        // Case-sensitive, whitespace-significant: no trimming here.
+        assertTrue(PetAnimationKey(" dance ") != PetAnimationKey("dance"))
+        assertTrue(PetAnimationKey("Dance") != PetAnimationKey("dance"))
     }
 
     @Test

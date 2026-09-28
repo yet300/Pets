@@ -262,16 +262,10 @@ public object PetPackageParser {
         val animations = CodexV1.defaultAnimations().toMutableMap()
         var animationsValid = true
         for (name in manifest.animations.keys.sorted()) {
-            val key = try {
-                PetAnimationKey(name)
-            } catch (_: IllegalArgumentException) {
-                errors += PetCompatibilityError.MalformedManifest(
-                    "invalid animation name: must be non-blank and at most " +
-                        "${PetAnimationKey.MAX_KEY_LENGTH} characters",
-                )
-                animationsValid = false
-                continue
-            }
+            // Codex preserves upstream acceptance exactly: custom animation
+            // names are arbitrary strings (any length, including empty or
+            // whitespace). No generic key limit applies here.
+            val key = PetAnimationKey(name)
             val spec = manifest.animations.getValue(name)
             val normalized = normalizeCustomAnimation(name, spec, frameCount, errors)
             if (normalized == null) {
@@ -372,16 +366,10 @@ public object PetPackageParser {
         }
         // Exact upstream semantics: only "" defaults to idle; whitespace is
         // literal and fails fallback-existence validation unless such a key exists.
-        // Generic key validity (non-blank, max length) is enforced by
-        // PetAnimationKey: an invalid fallback name yields UnknownFallback
-        // (preserving the exact Codex observable behavior for whitespace).
+        // PetAnimationKey accepts arbitrary strings, so any non-empty fallback
+        // name (including whitespace) becomes a literal key here.
         val fallbackName = spec.fallback.ifEmpty { PetAnimations.Idle.value }
-        val fallbackKey = try {
-            PetAnimationKey(fallbackName)
-        } catch (_: IllegalArgumentException) {
-            errors += PetCompatibilityError.UnknownFallback(name, fallbackName)
-            return null
-        }
+        val fallbackKey = PetAnimationKey(fallbackName)
         val durationNanos = fpsToDurationNanos(spec.fps ?: CodexV1.DEFAULT_FPS)
         if (durationNanos == null) {
             errors += PetCompatibilityError.InvalidFps(name, spec.fps ?: CodexV1.DEFAULT_FPS)

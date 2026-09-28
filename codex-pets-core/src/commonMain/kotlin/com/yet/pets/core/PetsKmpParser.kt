@@ -249,24 +249,14 @@ public object PetsKmpPackageParser {
         }
         val seenKeys = HashSet<String>()
         for (entry in manifest.animations) {
+            // Pets KMP manifest normalization: keys are trimmed, then must be
+            // non-blank. Comparison is case-sensitive. There is no separate
+            // string-length cap: the whole manifest is bounded to 64 KiB, and
+            // the normalized model accepts arbitrary keys.
             val rawKey = entry.key?.trim()
             if (rawKey.isNullOrEmpty()) {
                 errors += PetsKmpError.InvalidAnimationKey(
                     "animation key is required and must be non-blank",
-                )
-                continue
-            }
-            if (rawKey.length > PetAnimationKey.MAX_KEY_LENGTH) {
-                errors += PetsKmpError.InvalidAnimationKey(
-                    "animation key must be at most ${PetAnimationKey.MAX_KEY_LENGTH} characters",
-                )
-                continue
-            }
-            try {
-                PetAnimationKey(rawKey)
-            } catch (_: IllegalArgumentException) {
-                errors += PetsKmpError.InvalidAnimationKey(
-                    "invalid animation key $rawKey",
                 )
                 continue
             }
@@ -325,15 +315,9 @@ public object PetsKmpPackageParser {
             )
             return PetsKmpParseOutcome.Failure(PetsKmpReport(errors))
         }
-        val defaultKey: PetAnimationKey
-        try {
-            defaultKey = PetAnimationKey(rawDefault)
-        } catch (_: IllegalArgumentException) {
-            errors += PetsKmpError.UnknownDefaultAnimation(
-                "defaultAnimation is invalid: $rawDefault",
-            )
-            return PetsKmpParseOutcome.Failure(PetsKmpReport(errors))
-        }
+        // defaultAnimation is trimmed like animation keys; blank-after-trim was
+        // rejected above. The normalized key model accepts arbitrary strings.
+        val defaultKey = PetAnimationKey(rawDefault)
         val declaredKeys = manifest.animations.mapNotNull { it.key?.trim() }.toSet()
         if (!declaredKeys.contains(rawDefault)) {
             errors += PetsKmpError.UnknownDefaultAnimation(

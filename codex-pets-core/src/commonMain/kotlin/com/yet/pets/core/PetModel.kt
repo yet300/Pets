@@ -157,12 +157,8 @@ public class PetDefinition internal constructor(
     /** Animation for [key], or `null` when absent. */
     public fun animation(key: PetAnimationKey): PetAnimation? = lookup[key]
 
-    /** Animation for [name], or `null` when absent. Avoids key allocation for lookups. */
-    public fun animation(name: String): PetAnimation? = try {
-        lookup[PetAnimationKey(name)]
-    } catch (_: IllegalArgumentException) {
-        null
-    }
+    /** Animation for [name], or `null` when absent. */
+    public fun animation(name: String): PetAnimation? = lookup[PetAnimationKey(name)]
 
     init {
         require(frameCount > 0) { "frameCount must be positive, got $frameCount" }

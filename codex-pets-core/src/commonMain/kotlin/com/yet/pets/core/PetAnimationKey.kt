@@ -3,30 +3,28 @@ package com.yet.pets.core
 /**
  * Immutable identifier for a pet animation track.
  *
- * Generic runtime: arbitrary user-defined keys are supported (for example
- * `sleep`, `eat`, `dance`, `happy`, `spin`). Animations are intentionally NOT
- * a closed enum. Use [PetAnimations] constants only for the known Codex V1
+ * Generic normalized identifier shared by multiple adapters: accepts
+ * arbitrary [String] values (any length, blank, or whitespace) with no
+ * format-specific restrictions at this layer, so no adapter's contract can
+ * leak into another's. Animations are intentionally NOT a closed enum: user
+ * keys such as `sleep`, `eat`, `dance`, `happy`, or `spin` need no library
+ * change. Use [PetAnimations] constants only for the known Codex V1
  * compatibility states.
+ *
+ * Format-level rules live in each adapter's own normalization, never here:
+ * Pets KMP v1 trims manifest keys and rejects blank-after-trim (remaining
+ * safe via the 64 KiB manifest cap); the Codex V1 adapter preserves upstream
+ * acceptance exactly, including empty (`""` selects idle fallbacks) and
+ * literal whitespace names.
  *
  * A regular class (not a value/inline class) so the type, its constructor, and
  * its [value] export naturally to Swift.
  *
- * Validity: [value] must be non-blank and at most [MAX_KEY_LENGTH] characters.
- * Equality and hashCode are deterministic string equality over [value].
+ * Equality and hashCode are deterministic case-sensitive string equality
+ * over [value]: `PetAnimationKey(" dance ")` differs from
+ * `PetAnimationKey("dance")`.
  */
 public class PetAnimationKey(public val value: String) {
-    public companion object {
-        /** Sensible upper bound for animation keys; no platform-dependent behavior. */
-        public const val MAX_KEY_LENGTH: Int = 64
-    }
-
-    init {
-        require(value.isNotBlank()) { "animation key must be non-blank" }
-        require(value.length <= MAX_KEY_LENGTH) {
-            "animation key must be at most $MAX_KEY_LENGTH characters, got ${value.length}"
-        }
-    }
-
     override fun equals(other: Any?): Boolean =
         other is PetAnimationKey && value == other.value
 
