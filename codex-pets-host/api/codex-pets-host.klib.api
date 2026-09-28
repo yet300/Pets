@@ -60,6 +60,7 @@ final class com.yet.pets.host/PetHostState { // com.yet.pets.host/PetHostState|n
 
     final fun hide() // com.yet.pets.host/PetHostState.hide|hide(){}[0]
     final fun moveTo(kotlin/Float, kotlin/Float) // com.yet.pets.host/PetHostState.moveTo|moveTo(kotlin.Float;kotlin.Float){}[0]
+    final fun pinToDefault() // com.yet.pets.host/PetHostState.pinToDefault|pinToDefault(){}[0]
     final fun pinToIdle() // com.yet.pets.host/PetHostState.pinToIdle|pinToIdle(){}[0]
     final fun play(com.yet.pets.core/PetAnimationKey) // com.yet.pets.host/PetHostState.play|play(com.yet.pets.core.PetAnimationKey){}[0]
     final fun resume() // com.yet.pets.host/PetHostState.resume|resume(){}[0]

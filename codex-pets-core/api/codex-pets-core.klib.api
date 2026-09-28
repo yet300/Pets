@@ -272,6 +272,355 @@ sealed interface com.yet.pets.core/PetSpritesheetPathOutcome { // com.yet.pets.c
     }
 }
 
+sealed interface com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError|null[0]
+    abstract val message // com.yet.pets.core/PetsKmpError.message|{}message[0]
+        abstract fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.message.<get-message>|<get-message>(){}[0]
+
+    final class DuplicateAnimationKey : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.<init>|<init>(kotlin.String){}[0]
+
+        final val key // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.key|{}key[0]
+            final fun <get-key>(): kotlin/String // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.key.<get-key>|<get-key>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.DuplicateAnimationKey // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.DuplicateAnimationKey.toString|toString(){}[0]
+    }
+
+    final class EmptyAnimationFrames : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.<init>|<init>(kotlin.String){}[0]
+
+        final val animation // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.animation|{}animation[0]
+            final fun <get-animation>(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.animation.<get-animation>|<get-animation>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.EmptyAnimationFrames // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimationFrames.toString|toString(){}[0]
+    }
+
+    final class EmptyAnimations : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.EmptyAnimations|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.EmptyAnimations.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.EmptyAnimations.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimations.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimations.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.EmptyAnimations // com.yet.pets.core/PetsKmpError.EmptyAnimations.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.EmptyAnimations.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.EmptyAnimations.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.EmptyAnimations.toString|toString(){}[0]
+    }
+
+    final class FrameCapacityExceeded : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded|null[0]
+        constructor <init>(kotlin/Long, kotlin/Int) // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.<init>|<init>(kotlin.Long;kotlin.Int){}[0]
+
+        final val count // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.count|{}count[0]
+            final fun <get-count>(): kotlin/Long // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.count.<get-count>|<get-count>(){}[0]
+        final val maximum // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.maximum|{}maximum[0]
+            final fun <get-maximum>(): kotlin/Int // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.maximum.<get-maximum>|<get-maximum>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/Long // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.component2|component2(){}[0]
+        final fun copy(kotlin/Long = ..., kotlin/Int = ...): com.yet.pets.core/PetsKmpError.FrameCapacityExceeded // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.copy|copy(kotlin.Long;kotlin.Int){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.FrameCapacityExceeded.toString|toString(){}[0]
+    }
+
+    final class InputLimitExceeded : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InputLimitExceeded|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.InputLimitExceeded.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.InputLimitExceeded.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InputLimitExceeded.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InputLimitExceeded.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.InputLimitExceeded // com.yet.pets.core/PetsKmpError.InputLimitExceeded.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InputLimitExceeded.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InputLimitExceeded.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InputLimitExceeded.toString|toString(){}[0]
+    }
+
+    final class InvalidAnimationKey : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidAnimationKey|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidAnimationKey // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidAnimationKey.toString|toString(){}[0]
+    }
+
+    final class InvalidDuration : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidDuration|null[0]
+        constructor <init>(kotlin/String, kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidDuration.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val animation // com.yet.pets.core/PetsKmpError.InvalidDuration.animation|{}animation[0]
+            final fun <get-animation>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidDuration.animation.<get-animation>|<get-animation>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.InvalidDuration.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidDuration.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidDuration.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidDuration.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidDuration // com.yet.pets.core/PetsKmpError.InvalidDuration.copy|copy(kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidDuration.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidDuration.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidDuration.toString|toString(){}[0]
+    }
+
+    final class InvalidFrameIndex : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidFrameIndex|null[0]
+        constructor <init>(kotlin/String, kotlin/Int, kotlin/Long) // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.<init>|<init>(kotlin.String;kotlin.Int;kotlin.Long){}[0]
+
+        final val animation // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.animation|{}animation[0]
+            final fun <get-animation>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.animation.<get-animation>|<get-animation>(){}[0]
+        final val capacity // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.capacity|{}capacity[0]
+            final fun <get-capacity>(): kotlin/Long // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.capacity.<get-capacity>|<get-capacity>(){}[0]
+        final val index // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.index|{}index[0]
+            final fun <get-index>(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.index.<get-index>|<get-index>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.component1|component1(){}[0]
+        final fun component2(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.component2|component2(){}[0]
+        final fun component3(): kotlin/Long // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.component3|component3(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/Int = ..., kotlin/Long = ...): com.yet.pets.core/PetsKmpError.InvalidFrameIndex // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.copy|copy(kotlin.String;kotlin.Int;kotlin.Long){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameIndex.toString|toString(){}[0]
+    }
+
+    final class InvalidFrameSize : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidFrameSize|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidFrameSize.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.InvalidFrameSize.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameSize.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameSize.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidFrameSize // com.yet.pets.core/PetsKmpError.InvalidFrameSize.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidFrameSize.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidFrameSize.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidFrameSize.toString|toString(){}[0]
+    }
+
+    final class InvalidGrid : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidGrid|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidGrid.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.InvalidGrid.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidGrid.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidGrid.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidGrid // com.yet.pets.core/PetsKmpError.InvalidGrid.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidGrid.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidGrid.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidGrid.toString|toString(){}[0]
+    }
+
+    final class InvalidLoopStart : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidLoopStart|null[0]
+        constructor <init>(kotlin/String, kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidLoopStart.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val animation // com.yet.pets.core/PetsKmpError.InvalidLoopStart.animation|{}animation[0]
+            final fun <get-animation>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidLoopStart.animation.<get-animation>|<get-animation>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.InvalidLoopStart.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidLoopStart.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidLoopStart.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidLoopStart.component2|component2(){}[0]
+        final fun copy(kotlin/String = ..., kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidLoopStart // com.yet.pets.core/PetsKmpError.InvalidLoopStart.copy|copy(kotlin.String;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidLoopStart.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidLoopStart.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidLoopStart.toString|toString(){}[0]
+    }
+
+    final class InvalidSchema : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidSchema|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidSchema.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.InvalidSchema.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidSchema.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidSchema.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidSchema // com.yet.pets.core/PetsKmpError.InvalidSchema.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidSchema.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidSchema.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidSchema.toString|toString(){}[0]
+    }
+
+    final class InvalidSpritesheetBytes : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.InvalidSpritesheetBytes.toString|toString(){}[0]
+    }
+
+    final class MalformedManifest : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.MalformedManifest|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.MalformedManifest.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.MalformedManifest.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.MalformedManifest.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.MalformedManifest.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.MalformedManifest // com.yet.pets.core/PetsKmpError.MalformedManifest.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.MalformedManifest.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.MalformedManifest.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.MalformedManifest.toString|toString(){}[0]
+    }
+
+    final class MissingDisplayName : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.MissingDisplayName|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.MissingDisplayName.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.MissingDisplayName.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.MissingDisplayName.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.MissingDisplayName.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.MissingDisplayName // com.yet.pets.core/PetsKmpError.MissingDisplayName.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.MissingDisplayName.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.MissingDisplayName.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.MissingDisplayName.toString|toString(){}[0]
+    }
+
+    final class MissingId : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.MissingId|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.MissingId.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.MissingId.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.MissingId.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.MissingId.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.MissingId // com.yet.pets.core/PetsKmpError.MissingId.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.MissingId.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.MissingId.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.MissingId.toString|toString(){}[0]
+    }
+
+    final class NormalizationFailed : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.NormalizationFailed|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.NormalizationFailed.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.NormalizationFailed.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.NormalizationFailed.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.NormalizationFailed.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.NormalizationFailed // com.yet.pets.core/PetsKmpError.NormalizationFailed.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.NormalizationFailed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.NormalizationFailed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.NormalizationFailed.toString|toString(){}[0]
+    }
+
+    final class UnknownDefaultAnimation : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.UnknownDefaultAnimation.toString|toString(){}[0]
+    }
+
+    final class UnsupportedSchemaVersion : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.<init>|<init>(kotlin.String){}[0]
+
+        final val message // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.UnsupportedSchemaVersion.toString|toString(){}[0]
+    }
+
+    final class UnsupportedSpritesheetFormat : com.yet.pets.core/PetsKmpError { // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat|null[0]
+        constructor <init>(com.yet.pets.core/SpritesheetFormat) // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.<init>|<init>(com.yet.pets.core.SpritesheetFormat){}[0]
+
+        final val format // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.format|{}format[0]
+            final fun <get-format>(): com.yet.pets.core/SpritesheetFormat // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.format.<get-format>|<get-format>(){}[0]
+        final val message // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.message.<get-message>|<get-message>(){}[0]
+
+        final fun component1(): com.yet.pets.core/SpritesheetFormat // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.component1|component1(){}[0]
+        final fun copy(com.yet.pets.core/SpritesheetFormat = ...): com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.copy|copy(com.yet.pets.core.SpritesheetFormat){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpError.UnsupportedSpritesheetFormat.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.yet.pets.core/PetsKmpParseOutcome { // com.yet.pets.core/PetsKmpParseOutcome|null[0]
+    final class Failure : com.yet.pets.core/PetsKmpParseOutcome { // com.yet.pets.core/PetsKmpParseOutcome.Failure|null[0]
+        constructor <init>(com.yet.pets.core/PetsKmpReport) // com.yet.pets.core/PetsKmpParseOutcome.Failure.<init>|<init>(com.yet.pets.core.PetsKmpReport){}[0]
+
+        final val report // com.yet.pets.core/PetsKmpParseOutcome.Failure.report|{}report[0]
+            final fun <get-report>(): com.yet.pets.core/PetsKmpReport // com.yet.pets.core/PetsKmpParseOutcome.Failure.report.<get-report>|<get-report>(){}[0]
+
+        final fun component1(): com.yet.pets.core/PetsKmpReport // com.yet.pets.core/PetsKmpParseOutcome.Failure.component1|component1(){}[0]
+        final fun copy(com.yet.pets.core/PetsKmpReport = ...): com.yet.pets.core/PetsKmpParseOutcome.Failure // com.yet.pets.core/PetsKmpParseOutcome.Failure.copy|copy(com.yet.pets.core.PetsKmpReport){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpParseOutcome.Failure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpParseOutcome.Failure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpParseOutcome.Failure.toString|toString(){}[0]
+    }
+
+    final class Success : com.yet.pets.core/PetsKmpParseOutcome { // com.yet.pets.core/PetsKmpParseOutcome.Success|null[0]
+        constructor <init>(com.yet.pets.core/PetDefinition, kotlin/String) // com.yet.pets.core/PetsKmpParseOutcome.Success.<init>|<init>(com.yet.pets.core.PetDefinition;kotlin.String){}[0]
+
+        final val definition // com.yet.pets.core/PetsKmpParseOutcome.Success.definition|{}definition[0]
+            final fun <get-definition>(): com.yet.pets.core/PetDefinition // com.yet.pets.core/PetsKmpParseOutcome.Success.definition.<get-definition>|<get-definition>(){}[0]
+        final val spritesheetPath // com.yet.pets.core/PetsKmpParseOutcome.Success.spritesheetPath|{}spritesheetPath[0]
+            final fun <get-spritesheetPath>(): kotlin/String // com.yet.pets.core/PetsKmpParseOutcome.Success.spritesheetPath.<get-spritesheetPath>|<get-spritesheetPath>(){}[0]
+
+        final fun component1(): com.yet.pets.core/PetDefinition // com.yet.pets.core/PetsKmpParseOutcome.Success.component1|component1(){}[0]
+        final fun component2(): kotlin/String // com.yet.pets.core/PetsKmpParseOutcome.Success.component2|component2(){}[0]
+        final fun copy(com.yet.pets.core/PetDefinition = ..., kotlin/String = ...): com.yet.pets.core/PetsKmpParseOutcome.Success // com.yet.pets.core/PetsKmpParseOutcome.Success.copy|copy(com.yet.pets.core.PetDefinition;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpParseOutcome.Success.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpParseOutcome.Success.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpParseOutcome.Success.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.yet.pets.core/PetsKmpSpritesheetPathOutcome { // com.yet.pets.core/PetsKmpSpritesheetPathOutcome|null[0]
+    final class Failure : com.yet.pets.core/PetsKmpSpritesheetPathOutcome { // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure|null[0]
+        constructor <init>(com.yet.pets.core/PetsKmpError) // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.<init>|<init>(com.yet.pets.core.PetsKmpError){}[0]
+
+        final val error // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.error|{}error[0]
+            final fun <get-error>(): com.yet.pets.core/PetsKmpError // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.error.<get-error>|<get-error>(){}[0]
+
+        final fun component1(): com.yet.pets.core/PetsKmpError // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.component1|component1(){}[0]
+        final fun copy(com.yet.pets.core/PetsKmpError = ...): com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.copy|copy(com.yet.pets.core.PetsKmpError){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Failure.toString|toString(){}[0]
+    }
+
+    final class Success : com.yet.pets.core/PetsKmpSpritesheetPathOutcome { // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success|null[0]
+        constructor <init>(kotlin/String) // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.<init>|<init>(kotlin.String){}[0]
+
+        final val path // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.path|{}path[0]
+            final fun <get-path>(): kotlin/String // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.path.<get-path>|<get-path>(){}[0]
+
+        final fun component1(): kotlin/String // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.component1|component1(){}[0]
+        final fun copy(kotlin/String = ...): com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.copy|copy(kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpSpritesheetPathOutcome.Success.toString|toString(){}[0]
+    }
+}
+
 final class com.yet.pets.core/AtlasGeometry { // com.yet.pets.core/AtlasGeometry|null[0]
     final val atlasHeight // com.yet.pets.core/AtlasGeometry.atlasHeight|{}atlasHeight[0]
         final fun <get-atlasHeight>(): kotlin/Int // com.yet.pets.core/AtlasGeometry.atlasHeight.<get-atlasHeight>|<get-atlasHeight>(){}[0]
@@ -344,6 +693,11 @@ final class com.yet.pets.core/PetAnimationKey { // com.yet.pets.core/PetAnimatio
     final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetAnimationKey.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.yet.pets.core/PetAnimationKey.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.yet.pets.core/PetAnimationKey.toString|toString(){}[0]
+
+    final object Companion { // com.yet.pets.core/PetAnimationKey.Companion|null[0]
+        final const val MAX_KEY_LENGTH // com.yet.pets.core/PetAnimationKey.Companion.MAX_KEY_LENGTH|{}MAX_KEY_LENGTH[0]
+            final fun <get-MAX_KEY_LENGTH>(): kotlin/Int // com.yet.pets.core/PetAnimationKey.Companion.MAX_KEY_LENGTH.<get-MAX_KEY_LENGTH>|<get-MAX_KEY_LENGTH>(){}[0]
+    }
 }
 
 final class com.yet.pets.core/PetCompatibilityReport { // com.yet.pets.core/PetCompatibilityReport|null[0]
@@ -364,6 +718,8 @@ final class com.yet.pets.core/PetCompatibilityReport { // com.yet.pets.core/PetC
 final class com.yet.pets.core/PetDefinition { // com.yet.pets.core/PetDefinition|null[0]
     final val animationKeys // com.yet.pets.core/PetDefinition.animationKeys|{}animationKeys[0]
         final fun <get-animationKeys>(): kotlin.collections/List<com.yet.pets.core/PetAnimationKey> // com.yet.pets.core/PetDefinition.animationKeys.<get-animationKeys>|<get-animationKeys>(){}[0]
+    final val defaultAnimationKey // com.yet.pets.core/PetDefinition.defaultAnimationKey|{}defaultAnimationKey[0]
+        final fun <get-defaultAnimationKey>(): com.yet.pets.core/PetAnimationKey // com.yet.pets.core/PetDefinition.defaultAnimationKey.<get-defaultAnimationKey>|<get-defaultAnimationKey>(){}[0]
     final val description // com.yet.pets.core/PetDefinition.description|{}description[0]
         final fun <get-description>(): kotlin/String // com.yet.pets.core/PetDefinition.description.<get-description>|<get-description>(){}[0]
     final val displayName // com.yet.pets.core/PetDefinition.displayName|{}displayName[0]
@@ -431,6 +787,19 @@ final class com.yet.pets.core/PetPlaybackSample { // com.yet.pets.core/PetPlayba
     final fun toString(): kotlin/String // com.yet.pets.core/PetPlaybackSample.toString|toString(){}[0]
 }
 
+final class com.yet.pets.core/PetsKmpReport { // com.yet.pets.core/PetsKmpReport|null[0]
+    constructor <init>(kotlin.collections/List<com.yet.pets.core/PetsKmpError>) // com.yet.pets.core/PetsKmpReport.<init>|<init>(kotlin.collections.List<com.yet.pets.core.PetsKmpError>){}[0]
+
+    final val errors // com.yet.pets.core/PetsKmpReport.errors|{}errors[0]
+        final fun <get-errors>(): kotlin.collections/List<com.yet.pets.core/PetsKmpError> // com.yet.pets.core/PetsKmpReport.errors.<get-errors>|<get-errors>(){}[0]
+    final val isCompatible // com.yet.pets.core/PetsKmpReport.isCompatible|{}isCompatible[0]
+        final fun <get-isCompatible>(): kotlin/Boolean // com.yet.pets.core/PetsKmpReport.isCompatible.<get-isCompatible>|<get-isCompatible>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetsKmpReport.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.yet.pets.core/PetsKmpReport.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.yet.pets.core/PetsKmpReport.toString|toString(){}[0]
+}
+
 final class com.yet.pets.core/SpritesheetInfo { // com.yet.pets.core/SpritesheetInfo|null[0]
     constructor <init>(kotlin/Int, kotlin/Int, com.yet.pets.core/SpritesheetFormat) // com.yet.pets.core/SpritesheetInfo.<init>|<init>(kotlin.Int;kotlin.Int;com.yet.pets.core.SpritesheetFormat){}[0]
 
@@ -452,6 +821,14 @@ final class com.yet.pets.core/SpritesheetInfo { // com.yet.pets.core/Spritesheet
 
 final object com.yet.pets.core/CodexCompatibilityValidator { // com.yet.pets.core/CodexCompatibilityValidator|null[0]
     final fun validate(com.yet.pets.core/PetDefinition, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetCompatibilityReport // com.yet.pets.core/CodexCompatibilityValidator.validate|validate(com.yet.pets.core.PetDefinition;com.yet.pets.core.SpritesheetInfo){}[0]
+}
+
+final object com.yet.pets.core/CodexPetPackageParser { // com.yet.pets.core/CodexPetPackageParser|null[0]
+    final fun parse(kotlin/ByteArray, kotlin/ByteArray, kotlin/String = ...): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/CodexPetPackageParser.parse|parse(kotlin.ByteArray;kotlin.ByteArray;kotlin.String){}[0]
+    final fun parseTrustedMetadata(kotlin/ByteArray, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/CodexPetPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.ByteArray;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun parseTrustedMetadata(kotlin/String, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetParseOutcome // com.yet.pets.core/CodexPetPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.String;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun spritesheetPathOf(kotlin/ByteArray): com.yet.pets.core/PetSpritesheetPathOutcome // com.yet.pets.core/CodexPetPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.ByteArray){}[0]
+    final fun spritesheetPathOf(kotlin/String): com.yet.pets.core/PetSpritesheetPathOutcome // com.yet.pets.core/CodexPetPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.String){}[0]
 }
 
 final object com.yet.pets.core/EncodedSpritesheetProbe { // com.yet.pets.core/EncodedSpritesheetProbe|null[0]
@@ -504,6 +881,24 @@ final object com.yet.pets.core/PetPackageParser { // com.yet.pets.core/PetPackag
     final fun spritesheetPathOf(kotlin/String): com.yet.pets.core/PetSpritesheetPathOutcome // com.yet.pets.core/PetPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.String){}[0]
 }
 
+final object com.yet.pets.core/PetsKmpPackageParser { // com.yet.pets.core/PetsKmpPackageParser|null[0]
+    final const val DEFAULT_SPRITESHEET_PATH // com.yet.pets.core/PetsKmpPackageParser.DEFAULT_SPRITESHEET_PATH|{}DEFAULT_SPRITESHEET_PATH[0]
+        final fun <get-DEFAULT_SPRITESHEET_PATH>(): kotlin/String // com.yet.pets.core/PetsKmpPackageParser.DEFAULT_SPRITESHEET_PATH.<get-DEFAULT_SPRITESHEET_PATH>|<get-DEFAULT_SPRITESHEET_PATH>(){}[0]
+    final const val MAX_FRAME_CAPACITY // com.yet.pets.core/PetsKmpPackageParser.MAX_FRAME_CAPACITY|{}MAX_FRAME_CAPACITY[0]
+        final fun <get-MAX_FRAME_CAPACITY>(): kotlin/Int // com.yet.pets.core/PetsKmpPackageParser.MAX_FRAME_CAPACITY.<get-MAX_FRAME_CAPACITY>|<get-MAX_FRAME_CAPACITY>(){}[0]
+    final const val SCHEMA // com.yet.pets.core/PetsKmpPackageParser.SCHEMA|{}SCHEMA[0]
+        final fun <get-SCHEMA>(): kotlin/String // com.yet.pets.core/PetsKmpPackageParser.SCHEMA.<get-SCHEMA>|<get-SCHEMA>(){}[0]
+    final const val SCHEMA_VERSION // com.yet.pets.core/PetsKmpPackageParser.SCHEMA_VERSION|{}SCHEMA_VERSION[0]
+        final fun <get-SCHEMA_VERSION>(): kotlin/Int // com.yet.pets.core/PetsKmpPackageParser.SCHEMA_VERSION.<get-SCHEMA_VERSION>|<get-SCHEMA_VERSION>(){}[0]
+
+    final fun parse(kotlin/ByteArray, kotlin/ByteArray, kotlin/String = ...): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parse|parse(kotlin.ByteArray;kotlin.ByteArray;kotlin.String){}[0]
+    final fun parseTrustedMetadata(kotlin/ByteArray, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.ByteArray;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun parseTrustedMetadata(kotlin/String, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.String;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun spritesheetPathOf(kotlin/ByteArray): com.yet.pets.core/PetsKmpSpritesheetPathOutcome // com.yet.pets.core/PetsKmpPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.ByteArray){}[0]
+    final fun spritesheetPathOf(kotlin/String): com.yet.pets.core/PetsKmpSpritesheetPathOutcome // com.yet.pets.core/PetsKmpPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.String){}[0]
+}
+
 final fun com.yet.pets.core/normalizePetIdentity(kotlin/String?, kotlin/String?, kotlin/String?, kotlin/String): com.yet.pets.core/PetIdentity // com.yet.pets.core/normalizePetIdentity|normalizePetIdentity(kotlin.String?;kotlin.String?;kotlin.String?;kotlin.String){}[0]
 final fun com.yet.pets.core/samplePetAnimation(com.yet.pets.core/PetDefinition, com.yet.pets.core/PetAnimationKey, kotlin/Long): com.yet.pets.core/PetPlaybackSample // com.yet.pets.core/samplePetAnimation|samplePetAnimation(com.yet.pets.core.PetDefinition;com.yet.pets.core.PetAnimationKey;kotlin.Long){}[0]
+final fun com.yet.pets.core/staticDefaultSpriteIndex(com.yet.pets.core/PetDefinition): kotlin/Int // com.yet.pets.core/staticDefaultSpriteIndex|staticDefaultSpriteIndex(com.yet.pets.core.PetDefinition){}[0]
 final fun com.yet.pets.core/staticIdleSpriteIndex(com.yet.pets.core/PetDefinition): kotlin/Int // com.yet.pets.core/staticIdleSpriteIndex|staticIdleSpriteIndex(com.yet.pets.core.PetDefinition){}[0]

@@ -1,5 +1,6 @@
 public final class com/yet/pets/compose/CodexPetKt {
 	public static final fun CodexPet (Lcom/yet/pets/compose/PetPlayerState;Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;II)V
+	public static final fun Pet (Lcom/yet/pets/compose/PetPlayerState;Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;II)V
 }
 
 public abstract interface class com/yet/pets/compose/PetAtlasState {
@@ -42,6 +43,7 @@ public final class com/yet/pets/compose/PetPlayerState {
 	public final fun getAtlasState ()Lcom/yet/pets/compose/PetAtlasState;
 	public final fun getCurrentSample ()Lcom/yet/pets/core/PetPlaybackSample;
 	public final fun isPinned ()Z
+	public final fun pinToDefault ()V
 	public final fun pinToIdle ()V
 	public final fun play (Lcom/yet/pets/core/PetAnimationKey;)V
 	public final fun resume ()V

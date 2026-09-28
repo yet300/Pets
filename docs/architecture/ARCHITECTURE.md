@@ -1,5 +1,32 @@
 # Architecture
 
+`codex-pets-kmp` is evolving into a generic cross-platform animated pet
+runtime with Codex Pets V1 compatibility (not the runtime itself hard-coded
+around Codex).
+
+Three different concepts (never blurred):
+
+1. Pets KMP Package Format v1 — project-owned, stable candidate
+   (`docs/spec/PETS_KMP_PACKAGE_V1.md`).
+2. Codex V1 compatibility — verified against OpenAI public TUI.
+3. Codex Desktop V2 — research only / unsupported
+   (`docs/research/CODEX_V2_COMPATIBILITY_RESEARCH.md`).
+
+Conceptual layout after generic extraction:
+
+```text
+generic pet runtime (PetDefinition, PetAnimationKey, PetAnimation, PetFrame,
+AtlasGeometry, playback, generic schema/validation)
+    ^
+    |
+Codex V1 compatibility adapter (manifest interpretation, fixed geometry,
+built-in table, aliases, fallback/loop quirks)
+```
+
+The renderer (`Pet`) and host (`PetHost`) consume only `PetDefinition` +
+spritesheet bytes and never inspect schema, Codex version, package format, or
+animation names.
+
 Current v1 architecture, originally drafted in Phase 0.
 Normative compatibility input: `docs/research/CODEX_COMPATIBILITY.md`.
 

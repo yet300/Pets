@@ -1,23 +1,44 @@
 # codex-pets-kmp
 
-Unofficial Kotlin Multiplatform library for Codex-compatible animated pets.
-Pre-release (`0.1.0` is not published).
+A generic cross-platform animated pet runtime with Codex Pets V1
+compatibility. Pre-release (`0.1.0` is not published).
+
+Three different concepts (never blurred):
+
+1. Pets KMP Package Format v1 — project-owned, stable candidate
+   (`docs/spec/PETS_KMP_PACKAGE_V1.md`).
+2. Codex V1 compatibility — verified against OpenAI public TUI
+   (`CodexPetPackageParser`, fixed 1536x1872 geometry, built-in table).
+3. Codex Desktop V2 — research only / unsupported
+   (`docs/research/CODEX_V2_COMPATIBILITY_RESEARCH.md`).
+
+The original `assets/kodee/pet.json` (`spriteVersionNumber=2`, 1536x2288) is
+NOT accepted by the Codex V1 adapter by design, while a SEPARATE generic
+manifest (`assets/kodee/pet.pets-kmp.json`) describes the same spritesheet as
+a generic pet.
 
 ## Modules
 
-- `:codex-pets-core` parses bounded raw manifest/image pairs, inspects static
-  encoded image metadata, validates CLI V1 geometry, and samples playback.
-  It has no filesystem, decoder, UI, or network dependency.
+- `:codex-pets-core` owns the generic pet runtime (`PetDefinition`,
+  `PetAnimationKey`, `PetAnimation`, `PetFrame`, `AtlasGeometry`, playback,
+  generic package schema/validation) plus the Codex V1 compatibility adapter
+  (manifest interpretation, fixed geometry, built-in table, aliases,
+  fallback/loop quirks). It has no filesystem, decoder, UI, or network
+  dependency.
 - `:codex-pets-io` optionally loads directory and ZIP packages with path,
-  archive, and resource checks. It delegates image metadata inspection to core.
+  archive, and resource checks (shared secure implementation for both Codex
+  V1 and generic packages). It delegates image metadata inspection to core.
 - `:codex-pets-compose` decodes one atlas in a lifecycle-owned background job
-  and draws frame subregions. It depends on core, not IO.
+  and draws frame subregions via the generic `Pet` renderer (`CodexPet`
+  remains as a thin wrapper). It depends on core, not IO, and never inspects
+  package format.
 - `:codex-pets-host` (Phase 4: Cross-platform Pet Host) answers where a pet is
   rendered: `PetHostMode.InApp` (supported on all v1 UI targets) vs.
   `PetHostMode.SystemOverlay` (platform capability, not a universal KMP
   guarantee — Android: supported with explicit overlay permission; Desktop:
   supported / Linux best effort; iOS: unsupported). Depends on
-  `core <- compose <- host`, never on IO. No network, no foreground service,
+  `core <- compose <- host`, never on IO. Host is format-agnostic and uses
+  definition default semantics. No network, no foreground service,
   no autonomous behavior.
 - `:codex-pets-apple` builds the single supported Swift-facing `CodexPets`
   framework, exporting core, IO, Compose, and Host API types with one identity.
@@ -27,15 +48,30 @@ network or image-loading framework.
 
 ## Raw manifest and spritesheet bytes
 
+Codex V1:
+
 ```kotlin
-val parsed = PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId = "bella")
+val parsed = CodexPetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId = "bella")
 when (parsed) {
     is PetParseOutcome.Success -> {
         val state = rememberPetPlayerState(parsed.definition, spritesheetBytes)
-        CodexPet(state)
+        Pet(state)
         // On a UI event: state.play(PetAnimations.Waving)
     }
     is PetParseOutcome.Failure -> showErrors(parsed.report.errors)
+}
+```
+
+Generic Pets KMP v1:
+
+```kotlin
+val parsed = PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId = "kodee")
+when (parsed) {
+    is PetsKmpParseOutcome.Success -> {
+        val state = rememberPetPlayerState(parsed.definition, spritesheetBytes)
+        Pet(state)
+    }
+    is PetsKmpParseOutcome.Failure -> showErrors(parsed.report.errors)
 }
 ```
 
@@ -51,11 +87,14 @@ still bounded.
 when (val outcome = PetLoader.loadPetZip(zipBytes, fallbackId = "bella")) {
     is PetLoadOutcome.Success -> {
         val state = rememberPetPlayerState(outcome.definition, outcome.spritesheetBytes)
-        CodexPet(state)
+        Pet(state)
     }
     is PetLoadOutcome.Failure -> showErrors(outcome.errors)
 }
 ```
+
+Generic: `PetLoader.loadPetsKmpZip` / `loadPetsKmpDirectory`. Codex and
+generic loaders are explicitly distinct; no format sniffing.
 
 `PetLoadOutcome.Success` hands its bounded encoded `ByteArray` to the caller.
 Keep it unchanged while Compose snapshots it in the background. A new array
@@ -63,9 +102,10 @@ instance signals replacement. `PetAtlasState` moves from `Loading` to `Ready`
 or `Failed`; Compose checks its own 8 MiB byte cap and requires decoded atlas
 dimensions to equal the definition before drawing.
 
-One `PetPlayerState` owns one playback timeline. Multiple `CodexPet(state)`
+One `PetPlayerState` owns one playback timeline. Multiple `Pet(state)`
 renderers show that timeline; use separate states for independent animations.
-Call `play`, `pinToIdle`, and `resume` from the Compose/UI thread.
+Call `play`, `pinToDefault`, and `resume` from the Compose/UI thread
+(`pinToIdle` remains only as a thin deprecated Codex wrapper).
 
 The v1 atlas is static: PNG, JPEG, GIF first frame, and static WebP VP8,
 VP8L, or VP8X are supported. Animated WebP containers are rejected before
@@ -78,7 +118,7 @@ CLI dependency, which accepts animated WebP metadata and opens its first frame.
 val host = rememberPetHostState()
 val availability = rememberPetSystemOverlayAvailability()
 PetHost(definition, spritesheetBytes, host, PetHostMode.InApp)
-// host.show()/hide()/moveTo()/play()/pinToIdle()/resume()
+// host.show()/hide()/moveTo()/play()/pinToDefault()/resume()
 ```
 
 `InApp` is supported on Android/JVM/iOS. Floating outside the app is a

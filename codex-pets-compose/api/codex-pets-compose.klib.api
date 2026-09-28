@@ -42,6 +42,7 @@ final class com.yet.pets.compose/PetPlayerState { // com.yet.pets.compose/PetPla
     final var atlasState // com.yet.pets.compose/PetPlayerState.atlasState|{}atlasState[0]
         final fun <get-atlasState>(): com.yet.pets.compose/PetAtlasState // com.yet.pets.compose/PetPlayerState.atlasState.<get-atlasState>|<get-atlasState>(){}[0]
 
+    final fun pinToDefault() // com.yet.pets.compose/PetPlayerState.pinToDefault|pinToDefault(){}[0]
     final fun pinToIdle() // com.yet.pets.compose/PetPlayerState.pinToIdle|pinToIdle(){}[0]
     final fun play(com.yet.pets.core/PetAnimationKey) // com.yet.pets.compose/PetPlayerState.play|play(com.yet.pets.core.PetAnimationKey){}[0]
     final fun resume() // com.yet.pets.compose/PetPlayerState.resume|resume(){}[0]
@@ -53,6 +54,7 @@ final val com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Ready$stablepr
 final val com.yet.pets.compose/com_yet_pets_compose_PetPlayerState$stableprop // com.yet.pets.compose/com_yet_pets_compose_PetPlayerState$stableprop|#static{}com_yet_pets_compose_PetPlayerState$stableprop[0]
 
 final fun com.yet.pets.compose/CodexPet(com.yet.pets.compose/PetPlayerState, androidx.compose.ui/Modifier?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // com.yet.pets.compose/CodexPet|CodexPet(com.yet.pets.compose.PetPlayerState;androidx.compose.ui.Modifier?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.yet.pets.compose/Pet(com.yet.pets.compose/PetPlayerState, androidx.compose.ui/Modifier?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // com.yet.pets.compose/Pet|Pet(com.yet.pets.compose.PetPlayerState;androidx.compose.ui.Modifier?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Failed$stableprop_getter(): kotlin/Int // com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Failed$stableprop_getter|com_yet_pets_compose_PetAtlasState_Failed$stableprop_getter(){}[0]
 final fun com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Loading$stableprop_getter(): kotlin/Int // com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Loading$stableprop_getter|com_yet_pets_compose_PetAtlasState_Loading$stableprop_getter(){}[0]
 final fun com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Ready$stableprop_getter(): kotlin/Int // com.yet.pets.compose/com_yet_pets_compose_PetAtlasState_Ready$stableprop_getter|com_yet_pets_compose_PetAtlasState_Ready$stableprop_getter(){}[0]

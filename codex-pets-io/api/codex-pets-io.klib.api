@@ -214,6 +214,21 @@ sealed interface com.yet.pets.io/PetLoadError { // com.yet.pets.io/PetLoadError|
         final fun toString(): kotlin/String // com.yet.pets.io/PetLoadError.PathEscape.toString|toString(){}[0]
     }
 
+    final class PetsKmpCompatibilityFailure : com.yet.pets.io/PetLoadError { // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure|null[0]
+        constructor <init>(com.yet.pets.core/PetsKmpReport) // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.<init>|<init>(com.yet.pets.core.PetsKmpReport){}[0]
+
+        final val message // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.message|{}message[0]
+            final fun <get-message>(): kotlin/String // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.message.<get-message>|<get-message>(){}[0]
+        final val report // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.report|{}report[0]
+            final fun <get-report>(): com.yet.pets.core/PetsKmpReport // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.report.<get-report>|<get-report>(){}[0]
+
+        final fun component1(): com.yet.pets.core/PetsKmpReport // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.component1|component1(){}[0]
+        final fun copy(com.yet.pets.core/PetsKmpReport = ...): com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.copy|copy(com.yet.pets.core.PetsKmpReport){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.yet.pets.io/PetLoadError.PetsKmpCompatibilityFailure.toString|toString(){}[0]
+    }
+
     final class SymlinkEntry : com.yet.pets.io/PetLoadError { // com.yet.pets.io/PetLoadError.SymlinkEntry|null[0]
         constructor <init>(kotlin/String) // com.yet.pets.io/PetLoadError.SymlinkEntry.<init>|<init>(kotlin.String){}[0]
 
@@ -309,4 +324,6 @@ final class com.yet.pets.io/PetPackageLimits { // com.yet.pets.io/PetPackageLimi
 final object com.yet.pets.io/PetLoader { // com.yet.pets.io/PetLoader|null[0]
     final fun loadPetDirectory(kotlin/String, com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetDirectory|loadPetDirectory(kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
     final fun loadPetZip(kotlin/ByteArray, kotlin/String = ..., com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetZip|loadPetZip(kotlin.ByteArray;kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
+    final fun loadPetsKmpDirectory(kotlin/String, com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetsKmpDirectory|loadPetsKmpDirectory(kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
+    final fun loadPetsKmpZip(kotlin/ByteArray, kotlin/String = ..., com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetsKmpZip|loadPetsKmpZip(kotlin.ByteArray;kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
 }

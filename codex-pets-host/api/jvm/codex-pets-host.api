@@ -31,6 +31,7 @@ public final class com/yet/pets/host/PetHostState {
 	public final fun isPinned ()Z
 	public final fun isVisible ()Z
 	public final fun moveTo (FF)V
+	public final fun pinToDefault ()V
 	public final fun pinToIdle ()V
 	public final fun play (Lcom/yet/pets/core/PetAnimationKey;)V
 	public final fun resume ()V
