@@ -22,47 +22,47 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: :codex-pets-core:iosSimulatorArm64Test
+          - target: :pets-core:iosSimulatorArm64Test
             os: macos-latest
-          - target: :codex-pets-core:jvmTest
+          - target: :pets-core:jvmTest
             os: ubuntu-latest
-          - target: :codex-pets-core:jvmTest
+          - target: :pets-core:jvmTest
             os: windows-latest
-          - target: :codex-pets-core:assemble
+          - target: :pets-core:assemble
             os: ubuntu-latest
-          - target: :codex-pets-core:checkKotlinAbi
+          - target: :pets-core:checkKotlinAbi
             os: ubuntu-latest
-          - target: :codex-pets-io:iosSimulatorArm64Test
+          - target: :pets-io:iosSimulatorArm64Test
             os: macos-latest
-          - target: :codex-pets-io:jvmTest
+          - target: :pets-io:jvmTest
             os: ubuntu-latest
-          - target: :codex-pets-io:jvmTest
+          - target: :pets-io:jvmTest
             os: windows-latest
-          - target: :codex-pets-io:assemble
+          - target: :pets-io:assemble
             os: ubuntu-latest
-          - target: :codex-pets-io:checkKotlinAbi
+          - target: :pets-io:checkKotlinAbi
             os: ubuntu-latest
-          - target: :codex-pets-compose:iosSimulatorArm64Test
+          - target: :pets-compose:iosSimulatorArm64Test
             os: macos-latest
-          - target: :codex-pets-compose:jvmTest
+          - target: :pets-compose:jvmTest
             os: ubuntu-latest
-          - target: :codex-pets-compose:jvmTest
+          - target: :pets-compose:jvmTest
             os: windows-latest
-          - target: :codex-pets-apple:verifySwiftConsumer
+          - target: :pets-apple:verifySwiftConsumer
             os: macos-latest
-          - target: :codex-pets-compose:assemble
+          - target: :pets-compose:assemble
             os: ubuntu-latest
-          - target: :codex-pets-compose:checkKotlinAbi
+          - target: :pets-compose:checkKotlinAbi
             os: ubuntu-latest
-          - target: :codex-pets-host:iosSimulatorArm64Test
+          - target: :pets-host:iosSimulatorArm64Test
             os: macos-latest
-          - target: :codex-pets-host:jvmTest
+          - target: :pets-host:jvmTest
             os: ubuntu-latest
-          - target: :codex-pets-host:jvmTest
+          - target: :pets-host:jvmTest
             os: windows-latest
-          - target: :codex-pets-host:assemble
+          - target: :pets-host:assemble
             os: ubuntu-latest
-          - target: :codex-pets-host:checkKotlinAbi
+          - target: :pets-host:checkKotlinAbi
             os: ubuntu-latest
     runs-on: ${{ matrix.os }}
 
@@ -109,6 +109,6 @@ jobs:
         arch: x86_64
         disable-animations: true
         script: |
-          ./gradlew :codex-pets-host:installAndroidDeviceTest --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
+          ./gradlew :pets-host:installAndroidDeviceTest --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
           adb shell appops set com.yet.pets.host.test SYSTEM_ALERT_WINDOW allow
-          ./gradlew :codex-pets-compose:androidConnectedCheck :codex-pets-host:androidConnectedCheck --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g
+          ./gradlew :pets-compose:androidConnectedCheck :pets-host:androidConnectedCheck --max-workers=1 -Dorg.gradle.jvmargs=-Xmx6g

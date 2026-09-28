@@ -36,7 +36,7 @@ kotlin {
 
     targets.withType<KotlinNativeTarget> {
         binaries.framework {
-            baseName = "CodexPetsHost"
+            baseName = "PetsHost"
         }
     }
 
@@ -48,8 +48,8 @@ kotlin {
             implementation(libs.androidx.savedstate.android)
         }
         commonMain.dependencies {
-            implementation(project(":codex-pets-core"))
-            implementation(project(":codex-pets-compose"))
+            implementation(project(":pets-core"))
+            implementation(project(":pets-compose"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
@@ -98,11 +98,11 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "codex-pets-host", version.toString())
+    coordinates(group.toString(), "pets-host", version.toString())
 
     pom {
-        name = "Codex Pets Host"
-        description = "Cross-platform pet host for Codex-compatible animated pets (Kotlin Multiplatform)"
+        name = "Pets Host"
+        description = "Cross-platform pet host for animated pets (Kotlin Multiplatform)"
         inceptionYear = "2026"
         url = "https://github.com/yet300/Pets"
         licenses {

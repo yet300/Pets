@@ -35,13 +35,13 @@ kotlin {
 
     targets.withType<KotlinNativeTarget> {
         binaries.framework {
-            baseName = "CodexPetsCompose"
+            baseName = "PetsCompose"
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":codex-pets-core"))
+            implementation(project(":pets-core"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
@@ -60,7 +60,7 @@ kotlin {
             // Integration fixture only (io ZIP -> compose): proves the
             // optional io-to-compose flow through public APIs. Production
             // code must never depend on io (verified by source scan + graph).
-            implementation(project(":codex-pets-io"))
+            implementation(project(":pets-io"))
         }
 
         named("androidDeviceTest") {
@@ -90,11 +90,11 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "codex-pets-compose", version.toString())
+    coordinates(group.toString(), "pets-compose", version.toString())
 
     pom {
-        name = "Codex Pets Compose"
-        description = "Compose Multiplatform renderer for Codex-compatible animated pets (Kotlin Multiplatform)"
+        name = "Pets Compose"
+        description = "Compose Multiplatform renderer for animated pets (Kotlin Multiplatform)"
         inceptionYear = "2026"
         url = "https://github.com/yet300/Pets"
         licenses {

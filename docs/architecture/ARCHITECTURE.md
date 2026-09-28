@@ -1,6 +1,6 @@
 # Architecture
 
-`codex-pets-kmp` is evolving into a generic cross-platform animated pet
+`pets-kmp` is a generic cross-platform animated pet
 runtime with Codex Pets V1 compatibility (not the runtime itself hard-coded
 around Codex).
 
@@ -52,7 +52,7 @@ Normative compatibility input: `docs/research/CODEX_COMPATIBILITY.md`.
 3. Animation names are open: `PetAnimationKey(value: String)` with typed constants
    for known Codex states. No speculative V2/look-direction types in v1 public API.
 4. There is NO first-party network module in v1 (`core <- io`; `core <- compose
-   <- host`). Transport is host-owned: codex-pets-kmp does not own transport
+   <- host`). Transport is host-owned: pets-kmp does not own transport
    (see §6). Consumers that load from URLs fetch bytes with their own stack and
    pass them into core/io/compose APIs.
 5. Exactly one filesystem abstraction across all targets (see §4).
@@ -90,19 +90,19 @@ rectangle via `AtlasGeometry.sourceRectForOrNull`.
 ## 3. Module graph
 
 ```text
-:codex-pets-core ← :codex-pets-io   (Okio lives ONLY in io)
-:codex-pets-core ← :codex-pets-compose ← :codex-pets-host
-:codex-pets-apple → core + io + compose + host  (Apple framework facade only)
+:pets-core ← :pets-io   (Okio lives ONLY in io)
+:pets-core ← :pets-compose ← :pets-host
+:pets-apple → core + io + compose + host  (Apple framework facade only)
 ```
 
-Phase 4 is the Cross-platform Pet Host (`:codex-pets-host`): `compose`
+Phase 4 is the Cross-platform Pet Host (`:pets-host`): `compose`
 answers how a pet is rendered, `host` answers where it is rendered (in-app
 surface vs. system overlay window where the OS permits it). A sample module
-is future work (Phase 5). `:codex-pets-apple` is the supported single Swift
+is future work (Phase 5). `:pets-apple` is the supported single Swift
 framework. The separate layer frameworks are build artifacts and must not be
 combined as a Swift distribution because they duplicate core model identities.
 
-There is no `:codex-pets-network` module in v1. How bytes arrive from the
+There is no `:pets-network` module in v1. How bytes arrive from the
 network is the host application's responsibility (see §6).
 
 The proposed layout is justified:
@@ -145,7 +145,7 @@ Comparison of realistic modern-KMP options:
 | kotlinx-io `kotlinx.io.files` | JetBrains, small | Filesystem API experimental/limited per target at cataloged 0.9.1; weaker test fakes; zip story DIY |
 | `java.io.File` / `NSURL` expect/actual | zero deps | one abstraction per platform to design, test, and keep consistent — exactly the cost this decision must avoid |
 
-Decision: **Okio** in `:codex-pets-io` only. Core accepts `ByteArray`s,
+Decision: **Okio** in `:pets-io` only. Core accepts `ByteArray`s,
 `String`s, and plain `SpritesheetInfo(width, height, format)` values; it owns
 one pure, bounded encoded-image metadata probe. IO delegates to that probe.
 Core performs no pixel decode or filesystem work. The normal public raw-pair
@@ -267,7 +267,7 @@ different points:
   existence, directory containment, symlinks, ZIP entries, or archive ambiguity:
   a pure-core validator cannot see filesystem facts, and no fake-filesystem
   abstraction is invented in core to pretend otherwise.
-- `:codex-pets-io` package loader owns all filesystem/archive facts:
+- `:pets-io` package loader owns all filesystem/archive facts:
   pet.json/avatar.json discovery, spritesheet existence, lexical path rejection,
   canonical path confinement, symlink policy, ZIP structure/traversal/limits/
   duplicates/ambiguity, bounded extraction of manifest + spritesheet bytes,
@@ -277,7 +277,7 @@ different points:
   io establishes the facts, core judges them.
 - `CodexAuthoringValidator` — **DEFERRED tooling work (not Phase 1/2).** It
   requires pixel-level access, which must NOT introduce image-decoder
-  dependencies into `:codex-pets-io` or any runtime artifact. When built, it
+  dependencies into `:pets-io` or any runtime artifact. When built, it
   lives in separate tooling (sample/CI-side) and produces an advisory
   `PetAuthoringReport`. Phase 1 and Phase 2 runtime artifacts implement no
   authoring QA.
@@ -290,7 +290,7 @@ different points:
 
 ## 6. Transport is host-owned — no network module in v1
 
-codex-pets-kmp does not own transport. There is NO `:codex-pets-network`
+pets-kmp does not own transport. There is NO `:pets-network`
 module, NO Ktor dependency, NO HTTP/download/redirect/caching code, and NO
 `loadPetZipFromUrl` / `DownloadPolicy` / HTTP-status / redirect-policy API in
 v1. Not implemented, not planned for v1.
@@ -386,7 +386,7 @@ Explicit policy over popularity — each addition justified:
   if a concrete gap (e.g. a needed check the KGP integration lacks) is recorded.
 - Publishing: keep Vanniktech `maven-publish` (already wired) → Maven Central;
   fix placeholder POM (license/developer/SCM), real `group:artifact:version`
-  per module (`com.yet.pets:codex-pets-core`, …), sources + javadoc/Dokka jars
+  per module (`com.yet.pets:pets-core`, …), sources + javadoc/Dokka jars
   (Central requirement), GPG signing (already `signAllPublications`).
 - Dokka: multimodule Dokka for the documentation artifact only.
 - CI: matrix matches the support matrix exactly — `jvmTest` (ubuntu), iOS

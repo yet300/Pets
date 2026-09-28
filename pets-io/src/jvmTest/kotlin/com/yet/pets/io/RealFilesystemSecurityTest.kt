@@ -22,7 +22,7 @@ class RealFilesystemSecurityTest {
     private val roots = mutableListOf<java.nio.file.Path>()
 
     private fun newRoot(): java.nio.file.Path {
-        val root = Files.createTempDirectory("codex-pets-io-test")
+        val root = Files.createTempDirectory("pets-io-test")
         roots.add(root)
         return root
     }

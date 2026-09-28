@@ -14,7 +14,7 @@ No coroutines in core: there are no loaders in core (all I/O lives in
 The raw-pair parser accepts ≤64 KiB manifest and ≤8 MiB encoded sheet.
 Compose independently enforces the 8 MiB image cap and decoded geometry.
 Animated WebP containers are rejected at the core probe on every target.
-Swift consumers link only `CodexPets`, which exports one `PetDefinition` type;
+Swift consumers link only `Pets`, which exports one `PetDefinition` type;
 layer frameworks are build artifacts, not a supported combined distribution.
 
 > **Phase 1 Apple Interop Amendment.** Empirical Apple-interop results changed
@@ -256,7 +256,7 @@ never parses URLs.
 
 There is NO first-party network module in v1: no `loadPetZipFromUrl`, no
 `DownloadPolicy`, no HTTP-status errors, no redirect policy, no URL-derived
-package identity. Transport is host-owned — codex-pets-kmp does not own
+package identity. Transport is host-owned — pets-kmp does not own
 transport. Applications may obtain manifest/spritesheet/package bytes through
 app resources, the filesystem, a database, Ktor, OkHttp, URLSession, Firebase,
 GitHub, a custom backend, or any other source, then pass those bytes/data into

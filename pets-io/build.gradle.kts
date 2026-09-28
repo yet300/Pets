@@ -31,13 +31,13 @@ kotlin {
 
     targets.withType<KotlinNativeTarget> {
         binaries.framework {
-            baseName = "CodexPetsIo"
+            baseName = "PetsIo"
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":codex-pets-core"))
+            implementation(project(":pets-core"))
             implementation(libs.okio)
         }
 
@@ -57,11 +57,11 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "codex-pets-io", version.toString())
+    coordinates(group.toString(), "pets-io", version.toString())
 
     pom {
-        name = "Codex Pets IO"
-        description = "Filesystem and ZIP package loading for Codex-compatible animated pets (Kotlin Multiplatform)"
+        name = "Pets IO"
+        description = "Filesystem and ZIP package loading for animated pets (Kotlin Multiplatform)"
         inceptionYear = "2026"
         url = "https://github.com/yet300/Pets"
         licenses {

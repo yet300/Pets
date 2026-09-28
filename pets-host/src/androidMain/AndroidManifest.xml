@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Opt-in overlay permission for :codex-pets-host SystemOverlay only.
+    <!-- Opt-in overlay permission for :pets-host SystemOverlay only.
          Declared here so only consumers depending on host inherit it; never
          added to core, io, or compose. No foreground service, no boot receiver. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />

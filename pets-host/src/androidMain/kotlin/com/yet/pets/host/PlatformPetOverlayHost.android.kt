@@ -236,7 +236,7 @@ internal class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, 
  * Real Android application overlay using `WindowManager`.
  *
  * - Permission `SYSTEM_ALERT_WINDOW` declared in the host library manifest
- *   (opt-in: only consumers of `:codex-pets-host` inherit it).
+ *   (opt-in: only consumers of `:pets-host` inherit it).
  * - Missing permission: renders nothing, adds no window, never crashes, never
  *   silently falls back to in-app (future sample owns the Settings flow).
  * - Lifetime: exists outside any Activity while the process lives; NOT

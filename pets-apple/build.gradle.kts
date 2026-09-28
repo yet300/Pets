@@ -24,24 +24,24 @@ kotlin {
     explicitApi()
     iosArm64()
     iosSimulatorArm64()
-    val consumerXCFramework = XCFramework("CodexPets")
+    val consumerXCFramework = XCFramework("Pets")
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":codex-pets-core"))
-            api(project(":codex-pets-io"))
-            api(project(":codex-pets-compose"))
-            api(project(":codex-pets-host"))
+            api(project(":pets-core"))
+            api(project(":pets-io"))
+            api(project(":pets-compose"))
+            api(project(":pets-host"))
         }
     }
 
     targets.withType<KotlinNativeTarget> {
         binaries.framework {
-            baseName = "CodexPets"
-            export(project(":codex-pets-core"))
-            export(project(":codex-pets-io"))
-            export(project(":codex-pets-compose"))
-            export(project(":codex-pets-host"))
+            baseName = "Pets"
+            export(project(":pets-core"))
+            export(project(":pets-io"))
+            export(project(":pets-compose"))
+            export(project(":pets-host"))
             transitiveExport = false
             consumerXCFramework.add(this)
         }

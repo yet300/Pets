@@ -1,4 +1,4 @@
-import CodexPets
+import Pets
 
 // Compiled outside Kotlin/Native: one IO result definition is directly usable
 // by the core sampler and Compose player state surface in this single module.
@@ -23,7 +23,7 @@ func controlComposeState(_ state: PetPlayerState, key: PetAnimationKey) -> PetPl
     return state.currentSample
 }
 
-// Host API flows through the same umbrella (no separate CodexPetsHost
+// Host API flows through the same umbrella (no separate PetsHost
 // framework): one PetDefinition identity, host intent, and overlay capability.
 func controlHostState(_ state: PetHostState, key: PetAnimationKey) -> PetAnimationKey? {
     state.play(animation: key)

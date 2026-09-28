@@ -41,7 +41,7 @@ class GenericDirectoryTest {
     private val roots = mutableListOf<java.nio.file.Path>()
 
     private fun newRoot(): java.nio.file.Path {
-        val root = Files.createTempDirectory("codex-pets-generic-dir-test")
+        val root = Files.createTempDirectory("pets-generic-dir-test")
         roots.add(root)
         return root
     }

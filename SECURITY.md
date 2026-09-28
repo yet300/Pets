@@ -1,10 +1,10 @@
-# Security Policy — codex-pets-kmp
+# Security Policy — pets-kmp
 
 The library accepts foreign pet packages and encoded images. Each public
 untrusted-input path enforces its own boundary; passing data through one layer
 does not grant another layer's guarantees.
 
-## A. Directory and ZIP packages (`:codex-pets-io`)
+## A. Directory and ZIP packages (`:pets-io`)
 
 These bounds and checks apply identically to Codex V1 and Pets KMP generic
 packages (one shared implementation; only manifest discovery and identity
@@ -26,7 +26,7 @@ keeps legacy `avatar.json` discovery with a caller fallback id).
 - IO calls core's pure image metadata probe. A successful probe does not prove
   that all pixels decode.
 
-## B. Raw manifest and image bytes (`:codex-pets-core`)
+## B. Raw manifest and image bytes (`:pets-core`)
 
 `PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)` (Codex
 V1) and `PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes)`
@@ -45,7 +45,7 @@ Generic v1 additionally enforces strict integer JSON syntax (unquoted
 Raw parsing performs no filesystem/path-confinement or ZIP checks. Applications
 that receive bytes directly supply their own transport and storage policy.
 
-## C. Direct Compose atlas bytes (`:codex-pets-compose`)
+## C. Direct Compose atlas bytes (`:pets-compose`)
 
 `rememberPetPlayerState` checks encoded bytes ≤ 8 MiB before platform decode,
 rejects malformed or animated image metadata, then decodes on a
@@ -61,7 +61,7 @@ Static PNG, JPEG, GIF first frame, and static WebP VP8/VP8L/VP8X are the v1
 image contract. Animated WebP is rejected consistently, including on newer
 decoders that could display its first frame.
 
-## D. Pet host overlay (`:codex-pets-host`)
+## D. Pet host overlay (`:pets-host`)
 
 `PetHost` reuses the Compose public path, so §C protections still apply (8 MiB
 cap, static-format validation, async decode, atlas-dimension check,
@@ -69,7 +69,7 @@ Loading/Ready/Failed). The host adds no image copy and no playback math.
 
 Android `SystemOverlay` is privileged user-approved behavior:
 
-- `SYSTEM_ALERT_WINDOW` is declared only in the opt-in `:codex-pets-host`
+- `SYSTEM_ALERT_WINDOW` is declared only in the opt-in `:pets-host`
   library manifest (never in core/io/compose); only host consumers inherit it.
 - Missing permission reports `PermissionRequired`, adds no window, and never
   crashes or silently falls back to in-app. The application owns the Settings

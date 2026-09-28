@@ -14,7 +14,7 @@ import okio.Path.Companion.toPath
 
 /**
  * Public entry point for package loading. Filesystem and ZIP packages compose
- * here with `:codex-pets-core`, which remains the only manifest semantic
+ * here with `:pets-core`, which remains the only manifest semantic
  * normalizer and compatibility authority: io establishes facts (bytes, paths,
  * limits, image facts) and core judges them.
  *

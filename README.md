@@ -1,4 +1,4 @@
-# codex-pets-kmp
+# Pets KMP
 
 A generic cross-platform animated pet runtime with Codex Pets V1
 compatibility. Pre-release (`0.1.0` is not published).
@@ -19,20 +19,20 @@ a generic pet.
 
 ## Modules
 
-- `:codex-pets-core` owns the generic pet runtime (`PetDefinition`,
+- `:pets-core` owns the generic pet runtime (`PetDefinition`,
   `PetAnimationKey`, `PetAnimation`, `PetFrame`, `AtlasGeometry`, playback,
   generic package schema/validation) plus the Codex V1 compatibility adapter
   (manifest interpretation, fixed geometry, built-in table, aliases,
   fallback/loop quirks). It has no filesystem, decoder, UI, or network
   dependency.
-- `:codex-pets-io` optionally loads directory and ZIP packages with path,
+- `:pets-io` optionally loads directory and ZIP packages with path,
   archive, and resource checks (shared secure implementation for both Codex
   V1 and generic packages). It delegates image metadata inspection to core.
-- `:codex-pets-compose` decodes one atlas in a lifecycle-owned background job
+- `:pets-compose` decodes one atlas in a lifecycle-owned background job
   and draws frame subregions via the generic `Pet` renderer (`CodexPet`
   remains as a thin wrapper). It depends on core, not IO, and never inspects
   package format.
-- `:codex-pets-host` (Phase 4: Cross-platform Pet Host) answers where a pet is
+- `:pets-host` (Phase 4: Cross-platform Pet Host) answers where a pet is
   rendered: `PetHostMode.InApp` (supported on all v1 UI targets) vs.
   `PetHostMode.SystemOverlay` (platform capability, not a universal KMP
   guarantee — Android: supported with explicit overlay permission; Desktop:
@@ -40,7 +40,7 @@ a generic pet.
   `core <- compose <- host`, never on IO. Host is format-agnostic and uses
   definition default semantics. No network, no foreground service,
   no autonomous behavior.
-- `:codex-pets-apple` builds the single supported Swift-facing `CodexPets`
+- `:pets-apple` builds the single supported Swift-facing `Pets`
   framework, exporting core, IO, Compose, and Host API types with one identity.
 
 The host owns transport. The library never fetches URLs and includes no
@@ -140,3 +140,17 @@ transparent undecorated floating window (Linux best effort); iOS reports
 
 See [security boundaries](SECURITY.md), [architecture](docs/architecture/ARCHITECTURE.md),
 and [audit history](docs/audit/).
+
+## Future publication coordinates
+
+```kotlin
+implementation("com.yet.pets:pets-core:<version>")
+implementation("com.yet.pets:pets-compose:<version>")
+implementation("com.yet.pets:pets-host:<version>")
+```
+
+IO optional:
+
+```kotlin
+implementation("com.yet.pets:pets-io:<version>")
+```

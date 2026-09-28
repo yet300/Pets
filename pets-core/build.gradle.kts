@@ -32,7 +32,7 @@ kotlin {
 
     targets.withType<KotlinNativeTarget> {
         binaries.framework {
-            baseName = "CodexPetsCore"
+            baseName = "PetsCore"
         }
     }
 
@@ -52,11 +52,11 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "codex-pets-core", version.toString())
+    coordinates(group.toString(), "pets-core", version.toString())
 
     pom {
-        name = "Codex Pets Core"
-        description = "Pure Kotlin Multiplatform foundation for loading Codex-compatible animated pets"
+        name = "Pets Core"
+        description = "Pure Kotlin Multiplatform foundation for loading animated pets"
         inceptionYear = "2026"
         url = "https://github.com/yet300/Pets"
         licenses {

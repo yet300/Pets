@@ -25,7 +25,7 @@
   no codecs, no network, no real files. Core has no
   coroutines, so player/validator tests are plain synchronous tests.
   (Filesystem fakes such as Okio `FakeFileSystem` belong to the future
-  `:codex-pets-io` phase, never to core.)
+  `:pets-io` phase, never to core.)
 - Real decoding is verified per platform family (JVM/Android-host with real PNG/
   WebP files generated at test time via platform codecs; iOS-sim smoke).
 - Deterministic ZIP tests; no network in tests (transport is host-owned and
