@@ -19,3 +19,8 @@ include(":pets-io")
 include(":pets-compose")
 include(":pets-host")
 include(":pets-apple")
+
+include(":example")
+include(":example:shared")
+include(":example:androidApp")
+include(":example:desktopApp")
