@@ -4,11 +4,12 @@
 `8ba51403bc341d8b7a76ef31b1584f1f5bb90d15` (`docs(audit): close generic pet runtime gate`)
 
 ## 2. Final HEAD
-`59e9deeaebfa55270a1cf923217c9a348215f63c` (`refactor(build): rename all modules to pets-* and update CI`)
+`65d583652dad4dfeed9b2f802708d440a33578c2` (`ci: add Android API 36 real-overlay runtime verification`)
 
 ## 3. Commits
 - `e2b19b1`: `refactor(build): rename core and io modules to pets-*` — initial rename of core and io modules
 - `59e9dee`: `refactor(build): rename all modules to pets-* and update CI` — complete rename including compose, host, apple, CI, docs, Swift consumer, and ABI reference files
+- `65d5836`: `ci: add Android API 36 real-overlay runtime verification` — add `android-api36` CI job mirroring `android-api24`
 
 ## 4. Old -> New Module Mapping
 
@@ -138,7 +139,21 @@ Local Android test assembly successful:
 - `:pets-compose:assembleAndroidTest` — **BUILD SUCCESSFUL**
 - `:pets-host:assembleAndroidTest` — **BUILD SUCCESSFUL**
 
-Real device tests (API 24 and API 36) run in hosted CI via `reactivecircus/android-emulator-runner` with granted `SYSTEM_ALERT_WINDOW`. Expected to pass per CI configuration (same as pre-rename runs).
+Hosted CI run **36452924860** at HEAD `65d5836` — **all 23 jobs SUCCESS**:
+
+| Job | Result | Duration |
+|---|---|---|
+| `android-api24` | ✅ **GREEN** | 5m46s |
+| `android-api36` | ✅ **GREEN** | 7m12s |
+| `build` (21 matrix jobs) | ✅ **GREEN** | — |
+
+API 24 real-overlay runtime verified: **Compose 14/14, Host 14/14** (0 failures, 0 errors, 0 skips).
+API 36 real-overlay runtime verified: **Compose 14/14, Host 14/14** (0 failures, 0 errors, 0 skips).
+
+Both API levels execute identical test suites via `reactivecircus/android-emulator-runner`:
+- Grants `SYSTEM_ALERT_WINDOW` before host test
+- Runs `:pets-compose:androidConnectedCheck` and `:pets-host:androidConnectedCheck`
+- Host uses `TYPE_APPLICATION_OVERLAY` path on API 36 (API ≥ 26)
 
 ## 17. XCFramework Result
 
@@ -194,14 +209,14 @@ No mass-edit of history performed.
 
 ## 22. Remaining Risks / P2 Items
 
-- Android API 24/36 real device tests not run locally (no emulator available); rely on hosted CI
 - `linuxX64` Kotlin/Native target remains deferred (no CI leg)
 - Version catalog third-party aliases unchanged (no rename needed)
 - `wip/tamagotchi-example` branch not merged or adapted (per instructions)
+- GitHub repository description still says "Codex like pets library for Kotlin Multiplatform" (repository metadata, not a rename blocker)
 
 ## 23. Final Recommendation
 
-**PASS** — All acceptance gate criteria met:
+**PASS** — All acceptance gate criteria met at exact HEAD `65d5836`:
 
 ✅ Root project is generic (`pets-kmp`)  
 ✅ Live modules are exactly `pets-*`  
@@ -218,11 +233,12 @@ No mass-edit of history performed.
 ✅ Original Kodee V2 still rejects through Codex adapter  
 ✅ Generic Kodee still succeeds  
 ✅ IO security regressions green  
-✅ Android API 24/36 assembly green (real overlay tests configured in CI)  
+✅ Android API 24 real overlay green (hosted CI run 36452924860)  
+✅ Android API 36 real overlay green (hosted CI run 36452924860)  
 ✅ ABI validation green  
 ✅ Publication metadata contains no stale live Codex artifact IDs  
 ✅ Current docs use new naming  
 ✅ Old names remain only in historical evidence  
-✅ Hosted CI at exact rename HEAD will be verified on push  
+✅ Hosted CI at exact final HEAD is green (23/23 jobs)  
 ✅ Example work NOT resumed  
 ✅ No tag created
