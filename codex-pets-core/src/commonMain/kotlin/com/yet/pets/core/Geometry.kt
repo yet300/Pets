@@ -12,9 +12,16 @@ public data class IntRect(
  * Atlas grid geometry. The single source of truth for cell layout: frames store
  * only a [sprite index][PetFrame.spriteIndex], never a rectangle.
  *
- * The constructor is internal (validated instances come from the parser);
- * fail-fast guards cover positivity and overflow-safe products. Profile rules
- * (e.g. exact atlas cover) are checked by compatibility validation, which
+ * Generic runtime: arbitrary rectangular atlases are supported. Requirements:
+ * all dimensions positive, `atlasWidth % cellWidth == 0`,
+ * `atlasHeight % cellHeight == 0`, with derived `columns`, `rows`, and
+ * `frameCapacity = columns * rows`. Use overflow-safe arithmetic. No generic
+ * requirement of 1536/1872/2288/8/9/11/192/208 — the Codex V1 adapter still
+ * enforces its exact constants.
+ *
+ * The constructor is internal (validated instances come from parsers);
+ * fail-fast guards cover positivity, exact grid cover, and overflow-safe
+ * products. Profile rules are checked by compatibility validation, which
  * returns typed reports instead of throwing.
  */
 @ConsistentCopyVisibility
@@ -38,6 +45,12 @@ public data class AtlasGeometry internal constructor(
         }
         require(rows.toLong() * cellHeight <= Int.MAX_VALUE) {
             "grid height overflows Int: $rows * $cellHeight"
+        }
+        require(columns.toLong() * cellWidth == atlasWidth.toLong()) {
+            "grid must cover atlas width exactly: $columns * $cellWidth != $atlasWidth"
+        }
+        require(rows.toLong() * cellHeight == atlasHeight.toLong()) {
+            "grid must cover atlas height exactly: $rows * $cellHeight != $atlasHeight"
         }
     }
 

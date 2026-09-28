@@ -101,17 +101,29 @@ public class PetAnimation internal constructor(
 }
 
 /**
- * Normalized runtime pet definition. Pure data: no diagnostics (those live in
- * [PetCompatibilityReport] / outcomes), no platform types, no V2 concepts.
+ * Normalized runtime pet definition. Pure generic data: no diagnostics (those
+ * live in [PetCompatibilityReport] / outcomes), no platform types, no Codex
+ * version tags, no format tags.
+ *
+ * Generic runtime owns this type: it is format-agnostic. A Codex V1 package, a
+ * Pets KMP generic package, or a future adapter all produce this same model.
+ * Codex-specific strings (idle, running-right, …) must not appear as required
+ * generic-runtime semantics; they live only in the Codex compatibility adapter.
  *
  * Animation lookup is interop-safe: the internal map is never exposed (a
  * `Map<PetAnimationKey, PetAnimation>` bridges asymmetrically on Apple
  * platforms). [animationKeys] is sorted by key value for determinism;
  * [animation] resolves by key or by plain name.
  *
- * The constructor is internal: validated instances come from the parser, which
- * converts foreign-data violations to typed reports. Structural invariants
+ * The constructor is internal: validated instances come from parsers, which
+ * convert foreign-data violations to typed reports. Structural invariants
  * fail fast for programmer errors.
+ *
+ * @property defaultAnimationKey the definition-owned default animation. Every
+ *   definition has one and it must exist in [animations]. The Codex V1 adapter
+ *   sets this to `idle`; generic packages may choose `sleep`, `stand`,
+ *   `normal`, `base`, or anything else. Generic playback, pin, and
+ *   unknown-key resolution all use this key — never a hard-coded `idle`.
  */
 public class PetDefinition internal constructor(
     public val id: String,
@@ -120,6 +132,7 @@ public class PetDefinition internal constructor(
     public val geometry: AtlasGeometry,
     public val frameCount: Int,
     animations: Map<PetAnimationKey, PetAnimation>,
+    public val defaultAnimationKey: PetAnimationKey = PetAnimations.Idle,
 ) {
     private val lookup: Map<PetAnimationKey, PetAnimation> = animations.toMap()
 
@@ -131,7 +144,11 @@ public class PetDefinition internal constructor(
     public fun animation(key: PetAnimationKey): PetAnimation? = lookup[key]
 
     /** Animation for [name], or `null` when absent. Avoids key allocation for lookups. */
-    public fun animation(name: String): PetAnimation? = lookup[PetAnimationKey(name)]
+    public fun animation(name: String): PetAnimation? = try {
+        lookup[PetAnimationKey(name)]
+    } catch (_: IllegalArgumentException) {
+        null
+    }
 
     init {
         require(frameCount > 0) { "frameCount must be positive, got $frameCount" }
@@ -139,8 +156,8 @@ public class PetDefinition internal constructor(
             "frameCount $frameCount must equal grid capacity ${geometry.frameCapacity}"
         }
         require(lookup.isNotEmpty()) { "animations must be non-empty" }
-        require(lookup.containsKey(PetAnimations.Idle)) {
-            "animations must contain idle after normalization"
+        require(lookup.containsKey(defaultAnimationKey)) {
+            "default animation ${defaultAnimationKey.value} must exist in animations"
         }
     }
 
@@ -151,6 +168,7 @@ public class PetDefinition internal constructor(
             description == other.description &&
             geometry == other.geometry &&
             frameCount == other.frameCount &&
+            defaultAnimationKey == other.defaultAnimationKey &&
             lookup == other.lookup
 
     override fun hashCode(): Int {
@@ -159,11 +177,13 @@ public class PetDefinition internal constructor(
         result = 31 * result + description.hashCode()
         result = 31 * result + geometry.hashCode()
         result = 31 * result + frameCount
+        result = 31 * result + defaultAnimationKey.hashCode()
         result = 31 * result + lookup.hashCode()
         return result
     }
 
     override fun toString(): String =
         "PetDefinition(id=$id, displayName=$displayName, geometry=$geometry, " +
-            "frameCount=$frameCount, animationKeys=${animationKeys.map { it.value }})"
+            "frameCount=$frameCount, defaultAnimationKey=${defaultAnimationKey.value}, " +
+            "animationKeys=${animationKeys.map { it.value }})"
 }

@@ -17,17 +17,33 @@ public data class PetPlaybackSample(
 )
 
 /**
- * First idle frame for reduced-motion / static previews. Pure so every host
- * pins the same frame.
+ * First frame of the definition-owned default animation for reduced-motion /
+ * static previews. Pure so every host pins the same frame. Generic: uses
+ * [PetDefinition.defaultAnimationKey], never a hard-coded `idle`.
  */
+public fun staticDefaultSpriteIndex(definition: PetDefinition): Int =
+    definition.animation(definition.defaultAnimationKey)?.frames?.first()?.spriteIndex ?: 0
+
+/**
+ * First idle frame for reduced-motion / static previews.
+ *
+ * Codex-compatibility wrapper: delegates to [staticDefaultSpriteIndex].
+ * For Codex V1 definitions the default animation is `idle`, so behavior is
+ * identical. Generic callers should use [staticDefaultSpriteIndex].
+ */
+@Deprecated(
+    "Codex-specific wrapper; use staticDefaultSpriteIndex for generic pets.",
+    ReplaceWith("staticDefaultSpriteIndex(definition)"),
+)
 public fun staticIdleSpriteIndex(definition: PetDefinition): Int =
-    definition.animation(PetAnimations.Idle)?.frames?.first()?.spriteIndex ?: 0
+    staticDefaultSpriteIndex(definition)
 
 /**
  * Pure animation sampler.
  *
- * Codex animation-model parity with deterministic host scheduling:
- * - unknown requested keys resolve to `idle`,
+ * Generic runtime with Codex animation-model parity and deterministic host
+ * scheduling:
+ * - unknown requested keys resolve to the definition-owned default animation,
  * - prefix (`0 until loopStart`) plays once, suffix loops via duration modulo,
  * - a completed non-looping animation performs AT MOST ONE fallback hop
  *   (no recursion: the fallback's own completion is never inspected),
@@ -36,8 +52,12 @@ public fun staticIdleSpriteIndex(definition: PetDefinition): Int =
  *   improvement: a non-looping single frame reports the remaining nanos to its
  *   fallback transition instead of the reference host's "no wake-up" quirk,
  * - a dangling fallback on a manually-built (validator-bypassed) definition
- *   resolves to `idle` to stay total; parser output can never dangle because
- *   fallback existence is validated (deliberate hardening, not parity).
+ *   resolves to the definition default to stay total; parser output can never
+ *   dangle because fallback existence is validated (deliberate hardening,
+ *   not parity).
+ *
+ * For Codex V1 definitions the default animation is `idle`, so the exact
+ * Codex V1 semantics (unknown -> idle, fallback -> idle) are preserved.
  *
  * Elapsed handling is total and documented: `elapsedNanos <= 0` coerces to zero
  * (negative is impossible on the reference monotonic clock; clamping is our
@@ -50,17 +70,18 @@ public fun samplePetAnimation(
     requestedAnimation: PetAnimationKey,
     elapsedNanos: Long,
 ): PetPlaybackSample {
+    val defaultKey = definition.defaultAnimationKey
     val selectedKey = definition.animation(requestedAnimation)?.let { requestedAnimation }
-        ?: PetAnimations.Idle
-    val selected = definition.animation(selectedKey) ?: definition.animation(PetAnimations.Idle)
-        ?: return PetPlaybackSample(PetAnimations.Idle, 0, null)
+        ?: defaultKey
+    val selected = definition.animation(selectedKey) ?: definition.animation(defaultKey)
+        ?: return PetPlaybackSample(defaultKey, 0, null)
     val elapsed = if (elapsedNanos <= 0L) 0L else elapsedNanos
 
     if (selected.loopStart == null && elapsed >= totalNanos(selected)) {
         val fallbackKey = selected.fallback
-        val fallback = definition.animation(fallbackKey) ?: definition.animation(PetAnimations.Idle)
-        val evaluatedKey = if (definition.animation(fallbackKey) != null) fallbackKey else PetAnimations.Idle
-        if (fallback == null) return PetPlaybackSample(PetAnimations.Idle, 0, null)
+        val fallback = definition.animation(fallbackKey) ?: definition.animation(defaultKey)
+        val evaluatedKey = if (definition.animation(fallbackKey) != null) fallbackKey else defaultKey
+        if (fallback == null) return PetPlaybackSample(defaultKey, 0, null)
         return evaluate(fallback, evaluatedKey, elapsed)
     }
     return evaluate(selected, selectedKey, elapsed)

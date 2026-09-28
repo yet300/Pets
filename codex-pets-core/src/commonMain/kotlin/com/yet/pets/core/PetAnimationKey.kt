@@ -3,15 +3,30 @@ package com.yet.pets.core
 /**
  * Immutable identifier for a pet animation track.
  *
- * Codex supports arbitrary animation names (the reference manifest schema holds
- * an open string-keyed map), so animations are intentionally NOT a closed enum.
- * Use [PetAnimations] constants for the known Codex states.
+ * Generic runtime: arbitrary user-defined keys are supported (for example
+ * `sleep`, `eat`, `dance`, `happy`, `spin`). Animations are intentionally NOT
+ * a closed enum. Use [PetAnimations] constants only for the known Codex V1
+ * compatibility states.
  *
  * A regular class (not a value/inline class) so the type, its constructor, and
- * its [value] export naturally to Swift. Arbitrary names are accepted without
- * validation; unknown names simply resolve to `idle` at playback.
+ * its [value] export naturally to Swift.
+ *
+ * Validity: [value] must be non-blank and at most [MAX_KEY_LENGTH] characters.
+ * Equality and hashCode are deterministic string equality over [value].
  */
 public class PetAnimationKey(public val value: String) {
+    public companion object {
+        /** Sensible upper bound for animation keys; no platform-dependent behavior. */
+        public const val MAX_KEY_LENGTH: Int = 64
+    }
+
+    init {
+        require(value.isNotBlank()) { "animation key must be non-blank" }
+        require(value.length <= MAX_KEY_LENGTH) {
+            "animation key must be at most $MAX_KEY_LENGTH characters, got ${value.length}"
+        }
+    }
+
     override fun equals(other: Any?): Boolean =
         other is PetAnimationKey && value == other.value
 

@@ -27,10 +27,19 @@ public sealed interface PetParseOutcome {
 }
 
 /**
- * Public facade over internal manifest DTOs. The normal [parse] path accepts
- * manifest and encoded image bytes, checks both size limits, probes metadata,
- * and validates. IO may use [spritesheetPathOf] and [parseTrustedMetadata]
- * after its own bounded package read. Raw DTOs stay internal.
+ * Public facade over internal manifest DTOs. Codex V1 compatibility adapter:
+ * interprets the Codex V1 manifest, enforces the fixed V1 geometry
+ * (1536x1872, 8x9), builds the built-in animation table with aliases and
+ * fallback/loop compatibility quirks, and produces an ordinary generic
+ * [PetDefinition] with `defaultAnimationKey = idle`.
+ *
+ * The normal [parse] path accepts manifest and encoded image bytes, checks
+ * both size limits, probes metadata, and validates. IO may use
+ * [spritesheetPathOf] and [parseTrustedMetadata] after its own bounded package
+ * read. Raw DTOs stay internal.
+ *
+ * For Pets KMP generic packages use [PetsKmpPackageParser]; never infer
+ * generic format merely because Codex parsing failed.
  */
 public object PetPackageParser {
     private val json: Json = Json { ignoreUnknownKeys = true }
@@ -253,12 +262,22 @@ public object PetPackageParser {
         val animations = CodexV1.defaultAnimations().toMutableMap()
         var animationsValid = true
         for (name in manifest.animations.keys.sorted()) {
+            val key = try {
+                PetAnimationKey(name)
+            } catch (_: IllegalArgumentException) {
+                errors += PetCompatibilityError.MalformedManifest(
+                    "invalid animation name: must be non-blank and at most " +
+                        "${PetAnimationKey.MAX_KEY_LENGTH} characters",
+                )
+                animationsValid = false
+                continue
+            }
             val spec = manifest.animations.getValue(name)
             val normalized = normalizeCustomAnimation(name, spec, frameCount, errors)
             if (normalized == null) {
                 animationsValid = false
             } else {
-                animations[PetAnimationKey(name)] = normalized
+                animations[key] = normalized
             }
         }
         if (geometry == null || !animationsValid) {
@@ -312,6 +331,7 @@ public object PetPackageParser {
                 geometry = geometry,
                 frameCount = frameCount,
                 animations = animations,
+                defaultAnimationKey = PetAnimations.Idle,
             )
             val report = CodexCompatibilityValidator.validate(definition, spritesheet)
             if (report.isCompatible) {
@@ -349,7 +369,16 @@ public object PetPackageParser {
         }
         // Exact upstream semantics: only "" defaults to idle; whitespace is
         // literal and fails fallback-existence validation unless such a key exists.
+        // Generic key validity (non-blank, max length) is enforced by
+        // PetAnimationKey: an invalid fallback name yields UnknownFallback
+        // (preserving the exact Codex observable behavior for whitespace).
         val fallbackName = spec.fallback.ifEmpty { PetAnimations.Idle.value }
+        val fallbackKey = try {
+            PetAnimationKey(fallbackName)
+        } catch (_: IllegalArgumentException) {
+            errors += PetCompatibilityError.UnknownFallback(name, fallbackName)
+            return null
+        }
         val durationNanos = fpsToDurationNanos(spec.fps ?: CodexV1.DEFAULT_FPS)
         if (durationNanos == null) {
             errors += PetCompatibilityError.InvalidFps(name, spec.fps ?: CodexV1.DEFAULT_FPS)
@@ -358,7 +387,7 @@ public object PetPackageParser {
         return PetAnimation(
             frames = spec.frames.map { PetFrame(it, durationNanos) },
             loopStart = if (spec.loop != false) 0 else null,
-            fallback = PetAnimationKey(fallbackName),
+            fallback = fallbackKey,
         )
     }
 }

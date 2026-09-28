@@ -15,8 +15,13 @@ class ModelInvariantsTest {
         assertEquals(PetAnimationKey("dance").hashCode(), PetAnimationKey("dance").hashCode())
         assertEquals("PetAnimationKey(value=dance)", PetAnimationKey("dance").toString())
         assertTrue(PetAnimationKey("dance") != PetAnimationKey("idle"))
-        // Arbitrary names need no validation.
-        assertEquals("   ", PetAnimationKey("   ").value)
+        // Arbitrary valid names (sleep, eat, dance, happy, spin, …) need no
+        // library change; blank and overlong keys are rejected.
+        assertEquals("dance", PetAnimationKey("dance").value)
+        assertFailsWith<IllegalArgumentException> { PetAnimationKey("") }
+        assertFailsWith<IllegalArgumentException> { PetAnimationKey("   ") }
+        assertFailsWith<IllegalArgumentException> { PetAnimationKey("a".repeat(65)) }
+        assertEquals("a".repeat(64), PetAnimationKey("a".repeat(64)).value)
     }
 
     @Test
