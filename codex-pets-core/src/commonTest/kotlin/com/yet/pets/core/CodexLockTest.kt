@@ -109,6 +109,102 @@ class CodexLockTest {
     }
 
     @Test
+    fun customAnimationWith65CharNameAccepted() {
+        // P1-04 regression: Phase 4 accepted arbitrary custom names; the
+        // generic 64-character policy must never leak into the Codex adapter.
+        val name = "a".repeat(65)
+        val definition = codexSuccess(
+            """{"animations": {"$name": {"frames": [0], "fps": 8}}}""",
+        )
+        val custom = definition.animation(name)
+        assertTrue(custom != null, "65-char Codex custom animation must be accepted")
+        assertEquals(PetAnimations.Idle, custom.fallback)
+        assertEquals(0, samplePetAnimation(definition, PetAnimationKey(name), 0L).spriteIndex)
+    }
+
+    @Test
+    fun longCustomNameWithValidFramesFpsFallbackAccepted() {
+        val name = "b".repeat(100)
+        val definition = codexSuccess(
+            """{"animations": {"$name": {"frames": [0, 1], "fps": 8, "loop": false, "fallback": "idle"}}}""",
+        )
+        val custom = definition.animation(name)!!
+        assertEquals(null, custom.loopStart)
+        assertEquals(PetAnimations.Idle, custom.fallback)
+        // One-shot completes into idle with the same clock.
+        val held = samplePetAnimation(definition, PetAnimationKey(name), 5_000_000_000L)
+        assertEquals(PetAnimations.Idle, held.animation)
+    }
+
+    @Test
+    fun substantiallyLongerKeyStillBoundedByManifestCap() {
+        // No hidden Codex-specific cap: a 5000-character name is accepted
+        // (safely bounded by the 64 KiB manifest input cap).
+        val name = "c".repeat(5000)
+        val definition = codexSuccess(
+            """{"animations": {"$name": {"frames": [3], "fps": 8}}}""",
+        )
+        assertTrue(definition.animation(name) != null)
+    }
+
+    @Test
+    fun codexEmptyCustomAnimationKeyAccepted() {
+        // Phase-4 parity: the old key model accepted arbitrary strings, so an
+        // empty custom name is a literal key, not a rejection.
+        val definition = codexSuccess("""{"animations": {"": {"frames": [4], "fps": 8}}}""")
+        assertTrue(definition.animation("") != null)
+        assertEquals(4, samplePetAnimation(definition, PetAnimationKey(""), 0L).spriteIndex)
+    }
+
+    @Test
+    fun codexEmptyVsWhitespaceFallbackSemantics() {
+        // fallback == "" selects idle; whitespace is a literal name that fails
+        // fallback-existence validation unless such a key exists.
+        val empty = codexSuccess("""{"animations": {"x": {"frames": [0], "fps": 8, "fallback": ""}}}""")
+        assertEquals(PetAnimations.Idle, empty.animation("x")!!.fallback)
+
+        val whitespace = codexFailure(
+            """{"animations": {"y": {"frames": [0], "fps": 8, "fallback": " "}}}""",
+            SpritesheetInfo(1536, 1872, SpritesheetFormat.PNG),
+        )
+        val unknown = whitespace.errors.filterIsInstance<PetCompatibilityError.UnknownFallback>().single()
+        assertEquals("y", unknown.animation)
+        assertEquals(" ", unknown.fallback)
+    }
+
+    @Test
+    fun codexUnknownRequestedAnimationResolvesToIdle() {
+        val definition = codexSuccess("{}")
+        val at = samplePetAnimation(definition, PetAnimationKey("typo"), 0L)
+        assertEquals(PetAnimations.Idle, at.animation)
+    }
+
+    @Test
+    fun codexFallbackHopUsesSameOriginalElapsed() {
+        // One-shot a (100 ms) falls back to looping b ([7:100ms, 8:100ms]).
+        // At t=150 ms the SAME clock evaluates b (frame 8); a reset clock
+        // would show frame 7.
+        val animations = CodexV1.defaultAnimations().toMutableMap()
+        animations[PetAnimationKey("a")] = PetAnimation(
+            listOf(PetFrame(0, 100_000_000L)),
+            loopStart = null,
+            fallback = PetAnimationKey("b"),
+        )
+        animations[PetAnimationKey("b")] = PetAnimation(
+            listOf(PetFrame(7, 100_000_000L), PetFrame(8, 100_000_000L)),
+            loopStart = 0,
+            fallback = PetAnimations.Idle,
+        )
+        val definition = PetDefinition(
+            "t", "T", "", CodexV1.defaultGeometry(), CodexV1.FRAME_COUNT, animations,
+            defaultAnimationKey = PetAnimations.Idle,
+        )
+        val at = samplePetAnimation(definition, PetAnimationKey("a"), 150_000_000L)
+        assertEquals(PetAnimationKey("b"), at.animation)
+        assertEquals(8, at.spriteIndex)
+    }
+
+    @Test
     fun codexOneHopUnchanged() {
         val animations = CodexV1.defaultAnimations().toMutableMap()
         animations[PetAnimationKey("a")] = PetAnimation(

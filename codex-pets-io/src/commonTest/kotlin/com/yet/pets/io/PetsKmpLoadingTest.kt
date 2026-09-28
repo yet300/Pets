@@ -4,8 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import okio.Path.Companion.toPath
-import okio.fakefilesystem.FakeFileSystem
 
 private fun genericManifest(
     defaultAnimation: String = "blink",
@@ -47,24 +45,50 @@ class PetsKmpLoadingTest {
     }
 
     @Test
-    fun genericDirectoryLoadsSyntheticPet() {
-        val fs = FakeFileSystem()
-        fs.writePetPackage(
-            "/pkg",
-            genericManifest(),
-            sheetBytes = webpVp8Bytes(width = 96, height = 80),
-        )
-        // Directory loader uses the platform filesystem internally; exercise the
-        // shared tail through the ZIP path here and the directory path on JVM.
+    fun genericAvatarJsonOnlyZipDoesNotLoad() {
+        // Generic discovery requires pet.json: a legacy-only archive reports
+        // MissingManifest (the directory half of this policy is locked by
+        // GenericDirectoryTest on JVM through the public directory loader).
+        val sheet = webpVp8Bytes(width = 96, height = 80)
         val zip = buildZip(
             listOf(
-                ZipEntrySpec("pet.json", genericManifest().encodeToByteArray()),
-                ZipEntrySpec("spritesheet.webp", webpVp8Bytes(width = 96, height = 80)),
+                ZipEntrySpec("avatar.json", genericManifest().encodeToByteArray()),
+                ZipEntrySpec("spritesheet.webp", sheet),
             ),
         )
         val outcome = PetLoader.loadPetsKmpZip(zip)
-        assertIs<PetLoadOutcome.Success>(outcome)
-        assertTrue(fs.exists("/pkg/pet.json".toPath()))
+        assertIs<PetLoadOutcome.Failure>(outcome, "avatar.json-only generic ZIP must fail, got $outcome")
+        assertTrue(outcome.errors.any { it is PetLoadError.MissingManifest })
+    }
+
+    @Test
+    fun genericNestedAvatarJsonOnlyZipDoesNotLoad() {
+        val sheet = webpVp8Bytes(width = 96, height = 80)
+        val zip = buildZip(
+            listOf(
+                ZipEntrySpec("pkg/avatar.json", genericManifest().encodeToByteArray()),
+                ZipEntrySpec("pkg/spritesheet.webp", sheet),
+            ),
+        )
+        val outcome = PetLoader.loadPetsKmpZip(zip)
+        assertIs<PetLoadOutcome.Failure>(outcome, "nested avatar.json-only generic ZIP must fail, got $outcome")
+        assertTrue(outcome.errors.any { it is PetLoadError.MissingManifest })
+    }
+
+    @Test
+    fun genericPetJsonWinsOverAvatarJson() {
+        // Both present: pet.json decides; avatar.json content is inert.
+        val sheet = webpVp8Bytes(width = 96, height = 80)
+        val zip = buildZip(
+            listOf(
+                ZipEntrySpec("pet.json", genericManifest().encodeToByteArray()),
+                ZipEntrySpec("avatar.json", "{}".encodeToByteArray()),
+                ZipEntrySpec("spritesheet.webp", sheet),
+            ),
+        )
+        val outcome = PetLoader.loadPetsKmpZip(zip)
+        assertIs<PetLoadOutcome.Success>(outcome, "pet.json must win, got $outcome")
+        assertEquals("blink", outcome.definition.defaultAnimationKey.value)
     }
 
     @Test
