@@ -36,7 +36,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import com.yet.pets.compose.CodexPet
+import com.yet.pets.compose.Pet
 import com.yet.pets.compose.PetAtlasState
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetDefinition
@@ -283,7 +283,7 @@ internal actual fun PlatformPetOverlayHost(
             AndroidOverlayTestProbe.onAtlasState?.invoke(player.atlasState)
             LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
                 player.play(state.requestedAnimation)
-                if (state.isPinned) player.pinToIdle() else if (player.isPinned) player.resume()
+                if (state.isPinned) player.pinToDefault() else if (player.isPinned) player.resume()
             }
             if (state.isVisible) {
                 val viewDensity = LocalDensity.current.density
@@ -301,7 +301,7 @@ internal actual fun PlatformPetOverlayHost(
                             }
                         },
                 ) {
-                    CodexPet(player)
+                    Pet(player)
                 }
             }
         }

@@ -16,7 +16,7 @@ import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.yet.pets.compose.CodexPet
+import com.yet.pets.compose.Pet
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetDefinition
 import java.awt.Color
@@ -224,7 +224,7 @@ internal actual fun PlatformPetOverlayHost(
                 val player = rememberPetPlayerState(definition, spritesheetBytes)
                 LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
                     player.play(state.requestedAnimation)
-                    if (state.isPinned) player.pinToIdle() else if (player.isPinned) player.resume()
+                    if (state.isPinned) player.pinToDefault() else if (player.isPinned) player.resume()
                 }
                 if (state.isVisible) {
                     Box(
@@ -242,7 +242,7 @@ internal actual fun PlatformPetOverlayHost(
                                 }
                             },
                     ) {
-                        CodexPet(player)
+                        Pet(player)
                     }
                 }
             }

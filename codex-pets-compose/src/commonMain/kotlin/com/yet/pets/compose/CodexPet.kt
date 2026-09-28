@@ -31,7 +31,9 @@ internal data class PetDrawParams(
 )
 
 /**
- * Renders one pet frame.
+ * Renders one pet frame. Generic and format-agnostic: consumes only
+ * [PetDefinition] (via [PetPlayerState]) and spritesheet bytes. Never inspects
+ * schema, Codex version, package format, or animation names.
  *
  * The pet uses exactly one decoded atlas image: frame rendering draws a
  * subregion of it (no per-frame slicing, no per-frame decode, no pixel
@@ -58,7 +60,7 @@ internal data class PetDrawParams(
  * @param modifier applied after the aspect-ratio sizing.
  */
 @Composable
-public fun CodexPet(
+public fun Pet(
     state: PetPlayerState,
     modifier: Modifier = Modifier,
 ) {
@@ -95,6 +97,18 @@ public fun CodexPet(
             modifier = Modifier.aspectRatio(state.cellAspect).then(modifier).testTag(CodexPetTag),
         )
     }
+}
+
+/**
+ * Codex-compatibility wrapper: delegates to the same generic [Pet] renderer.
+ * No duplicated rendering implementation. Generic callers should use [Pet].
+ */
+@Composable
+public fun CodexPet(
+    state: PetPlayerState,
+    modifier: Modifier = Modifier,
+) {
+    Pet(state, modifier)
 }
 
 /** Test tag applied to the renderer node (both the canvas and the empty placeholder). */

@@ -24,9 +24,8 @@ import androidx.compose.runtime.LaunchedEffect
  * likewise triggers one re-decode; both inputs are part of the remember key.
  *
  * Memory: at most one transient copy (bounded here at 8 MiB
- * encoded) plus the single decoded atlas (1536x1872 RGBA ≈ 11.5 MiB for a
- * CLI V1 pet). The copy is dropped after decoding — never retained, never
- * re-copied.
+ * encoded) plus the single decoded atlas. The copy is dropped after decoding
+ * — never retained, never re-copied.
  *
  * @param definition normalized pet definition (core parsing result).
  * @param spritesheetBytes encoded spritesheet (JPEG, PNG, GIF, or WebP) from

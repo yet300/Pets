@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.yet.pets.compose.CodexPet
+import com.yet.pets.compose.Pet
 import com.yet.pets.compose.PetPlayerState
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetDefinition
@@ -25,7 +25,10 @@ internal object PetHostPlayerTestProbe {
 }
 
 /**
- * Hosts a pet in the requested [mode].
+ * Hosts a pet in the requested [mode]. Generic and format-agnostic: receives
+ * [PetDefinition], spritesheet bytes, and host state, and works identically
+ * for Codex V1 and Pets KMP pets. Never inspects package format. Default-idle
+ * assumptions are replaced with definition default semantics.
  *
  * - [PetHostMode.InApp]: common Compose implementation that works on
  *   Android, JVM, and iOS. Transparent surrounding area, position from
@@ -96,7 +99,7 @@ internal fun PetInAppHost(
     LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
         player.play(state.requestedAnimation)
         if (state.isPinned) {
-            player.pinToIdle()
+            player.pinToDefault()
         } else if (player.isPinned) {
             player.resume()
         }
@@ -133,7 +136,7 @@ internal fun PetInAppHost(
         )
         val density = LocalDensity.current
         Box(modifier = Modifier.fillMaxSize()) {
-            CodexPet(
+            Pet(
                 state = player,
                 modifier = Modifier
                     .size(petWidthDp.dp, petHeightDp.dp)

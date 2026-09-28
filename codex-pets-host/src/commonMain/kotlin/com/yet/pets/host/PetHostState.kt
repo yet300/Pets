@@ -21,8 +21,8 @@ import com.yet.pets.core.PetAnimations
  * `CGPoint`, …) appear in this public API.
  *
  * `isPinned` is exposed alongside the spec's four core properties so callers
- * can distinguish pinned (static idle) from playing states without reaching
- * into the player; `pinToIdle`/`resume` mutate it deterministically.
+ * can distinguish pinned (static default) from playing states without reaching
+ * into the player; `pinToDefault`/`resume` mutate it deterministically.
  * Use a state with at most one SystemOverlay composition at a time. Replacing
  * the state disposes the old platform resource and creates one for the new
  * state. Invoke control methods on the Compose/UI thread.
@@ -97,9 +97,22 @@ public class PetHostState internal constructor(
         requestedAnimation = animation
     }
 
-    /** Enters static-idle mode (display stays pinned until [resume]). Call on the Compose/UI thread. */
-    public fun pinToIdle() {
+    /** Enters static-default mode (display stays pinned until [resume]). Call on the Compose/UI thread. */
+    public fun pinToDefault() {
         isPinned = true
+    }
+
+    /**
+     * Codex-compatibility wrapper: delegates to [pinToDefault]. For Codex V1
+     * definitions the default animation is `idle`, so behavior is identical.
+     * Generic callers should use [pinToDefault]. No duplicated behavior.
+     */
+    @Deprecated(
+        "Codex-specific wrapper; use pinToDefault for generic pets.",
+        ReplaceWith("pinToDefault()"),
+    )
+    public fun pinToIdle() {
+        pinToDefault()
     }
 
     /** Leaves static-idle mode (resumes the requested animation from zero). Call on the Compose/UI thread. */

@@ -6,11 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import com.yet.pets.core.PetAnimationKey
-import com.yet.pets.core.PetAnimations
 import com.yet.pets.core.PetDefinition
 import com.yet.pets.core.PetPlaybackSample
 import com.yet.pets.core.samplePetAnimation
-import com.yet.pets.core.staticIdleSpriteIndex
+import com.yet.pets.core.staticDefaultSpriteIndex
 import kotlin.time.TimeSource
 
 /**
@@ -26,13 +25,18 @@ internal fun defaultMonotonicNanos(): () -> Long {
 /**
  * Single coherent owner of one pet's rendering/player state.
  *
+ * Generic and format-agnostic: consumes only [PetDefinition] and spritesheet
+ * bytes. Never inspects schema, Codex version, package format, or animation
+ * names. Generic fallback/default behavior uses
+ * [PetDefinition.defaultAnimationKey].
+ *
  * Owns: the [PetDefinition][com.yet.pets.core.PetDefinition], the loading or
  * decoded atlas image, the requested animation intent, the current
  * [sample][currentSample], and the animation-start timestamp. Consumers never
  * mutate samples, frame indices, or timers directly: animation intent flows in
  * through [play], which is called on the Compose/UI thread; pacing flows out of core's
  * [samplePetAnimation][com.yet.pets.core.samplePetAnimation], and the only
- * public controls are [play], [pinToIdle], and [resume].
+ * public controls are [play], [pinToDefault], and [resume].
  *
  * Timing model: elapsed time is measured against a monotonic animation-start
  * timestamp taken from [nowNanos] (monotonic by default). Delays in the
@@ -49,7 +53,7 @@ internal fun defaultMonotonicNanos(): () -> Long {
 public class PetPlayerState internal constructor(
     internal val definition: PetDefinition,
     decoded: DecodedAtlas,
-    initialAnimation: PetAnimationKey = PetAnimations.Idle,
+    initialAnimation: PetAnimationKey? = null,
     internal val nowNanos: () -> Long = defaultMonotonicNanos(),
 ) {
     internal var atlas: ImageBitmap? by mutableStateOf(decoded.bitmap)
@@ -77,11 +81,11 @@ public class PetPlayerState internal constructor(
         }
     }
 
-    private var requestedAnimation: PetAnimationKey = initialAnimation
+    private var requestedAnimation: PetAnimationKey = initialAnimation ?: definition.defaultAnimationKey
     private var animationStartNanos: Long = nowNanos()
 
     private var sampleState by mutableStateOf(
-        samplePetAnimation(definition, initialAnimation, 0L),
+        samplePetAnimation(definition, initialAnimation ?: definition.defaultAnimationKey, 0L),
     )
 
     /**
@@ -92,12 +96,12 @@ public class PetPlayerState internal constructor(
 
     private var pinnedState by mutableStateOf(false)
 
-    /** Whether [pinToIdle] static mode is active (timer stopped). */
+    /** Whether [pinToDefault] static mode is active (timer stopped). */
     public val isPinned: Boolean get() = pinnedState
 
     /**
-     * Scheduler epoch: bumped on every intent change, [pinToIdle], and
-     * [resume] so the frame loop in [CodexPet] restarts its timer exactly
+     * Scheduler epoch: bumped on every intent change, [pinToDefault], and
+     * [resume] so the frame loop in [Pet] restarts its timer exactly
      * when the animation clock does.
      */
     internal var animationEpoch by mutableIntStateOf(0)
@@ -125,7 +129,7 @@ public class PetPlayerState internal constructor(
 
     /**
      * Re-samples the current animation at [nowNanos] against the monotonic
-     * animation-start timestamp. Pinned state always yields the static idle
+     * animation-start timestamp. Pinned state always yields the static default
      * sprite. Pure core owns all playback math (frame durations, loops,
      * `loopStart`, fallback, one-hop semantics) — this only supplies elapsed
      * time.
@@ -141,8 +145,8 @@ public class PetPlayerState internal constructor(
 
     private fun refreshPinned() {
         sampleState = PetPlaybackSample(
-            animation = PetAnimations.Idle,
-            spriteIndex = staticIdleSpriteIndex(definition),
+            animation = definition.defaultAnimationKey,
+            spriteIndex = staticDefaultSpriteIndex(definition),
             nextFrameInNanos = null,
         )
     }
@@ -180,23 +184,41 @@ public class PetPlayerState internal constructor(
 
     /**
      * Reduced-motion / static mode: stops the active timer and displays the
-     * static idle sprite ([staticIdleSpriteIndex][com.yet.pets.core.staticIdleSpriteIndex];
+     * first frame of [PetDefinition.defaultAnimationKey]
+     * ([staticDefaultSpriteIndex][com.yet.pets.core.staticDefaultSpriteIndex];
      * the same frame every host pins). No background frame updates run while
      * pinned. Sticky: animation-intent changes are recorded but do not resume
      * motion — call [resume] to resume.
+     *
+     * Semantic requirement: display the first frame of the definition default
+     * and pause ordinary playback intent. Resume restores the most recently
+     * requested animation.
      *
      * No OS accessibility-preference detection is implemented in v1; this
      * explicit control is the cross-platform reduced-motion API. Call from
      * the Compose/UI thread.
      */
-    public fun pinToIdle() {
+    public fun pinToDefault() {
         pinnedState = true
         animationEpoch++
         refreshPinned()
     }
 
     /**
-     * Resumes normal animation after [pinToIdle]: unpins and restarts the
+     * Codex-compatibility wrapper: delegates to [pinToDefault]. For Codex V1
+     * definitions the default animation is `idle`, so behavior is identical.
+     * Generic callers should use [pinToDefault]. No duplicated behavior.
+     */
+    @Deprecated(
+        "Codex-specific wrapper; use pinToDefault for generic pets.",
+        ReplaceWith("pinToDefault()"),
+    )
+    public fun pinToIdle() {
+        pinToDefault()
+    }
+
+    /**
+     * Resumes normal animation after [pinToDefault]: unpins and restarts the
      * currently requested animation from elapsed zero (identical semantics to
      * an animation-key change). Calling [resume] while not pinned restarts the
      * current animation from zero as well — always deterministic.
