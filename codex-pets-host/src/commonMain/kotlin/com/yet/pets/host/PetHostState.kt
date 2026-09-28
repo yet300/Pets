@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.yet.pets.core.PetAnimationKey
-import com.yet.pets.core.PetAnimations
+import com.yet.pets.core.PetDefinition
 
 /**
  * Owns only host intent: visibility, position in dp, requested animation,
@@ -14,11 +14,19 @@ import com.yet.pets.core.PetAnimations
  *
  * It does NOT own the decoded bitmap, playback frame index, timer, or
  * geometry formulas. Rendering/playback goes through `rememberPetPlayerState`
- * / `PetPlayerState.play` / `CodexPet` inside the host composition.
+ * / `PetPlayerState.play` / `Pet` inside the host composition.
  *
  * Coordinates are plain [Float] dp values. No platform coordinate types
  * (`android.graphics.Point`, `WindowManager.LayoutParams`, `java.awt.Point`,
  * `CGPoint`, …) appear in this public API.
+ *
+ * The requested animation is nullable: `null` means "no explicit request —
+ * follow the bound definition's [defaultAnimationKey][PetDefinition.defaultAnimationKey]".
+ * Callers never need to know a definition's keys merely to create host state,
+ * and generic definitions are never exposed to a foreign `idle` sentinel.
+ * Binding resolves [effectiveAnimation] without mutating [requestedAnimation]:
+ * public state always expresses explicit caller intent, never the currently
+ * resolved player key.
  *
  * `isPinned` is exposed alongside the spec's four core properties so callers
  * can distinguish pinned (static default) from playing states without reaching
@@ -31,7 +39,7 @@ public class PetHostState internal constructor(
     visible: Boolean = true,
     xDp: Float = 0f,
     yDp: Float = 0f,
-    animation: PetAnimationKey = PetAnimations.Idle,
+    animation: PetAnimationKey? = null,
 ) {
     private var overlayOwner: Any? = null
 
@@ -68,9 +76,23 @@ public class PetHostState internal constructor(
     public var yDp: Float by mutableStateOf(if (yDp.isFinite()) yDp else 0f)
         private set
 
-    /** Requested animation intent (applied to the player by the host). */
-    public var requestedAnimation: PetAnimationKey by mutableStateOf(animation)
+    /**
+     * Requested animation intent (applied to the player by the host), or `null`
+     * when the caller expressed no explicit request. A `null` request follows
+     * the bound definition's default animation (see [effectiveAnimation]).
+     * Rendering never rewrites this value: it always expresses explicit caller
+     * intent, not the currently resolved player key.
+     */
+    public var requestedAnimation: PetAnimationKey? by mutableStateOf(animation)
         private set
+
+    /**
+     * Animation key the host actually plays for [definition]: the explicit
+     * [requestedAnimation], or the definition-owned default when no explicit
+     * request exists. Pure: never mutates host state.
+     */
+    public fun effectiveAnimation(definition: PetDefinition): PetAnimationKey =
+        requestedAnimation ?: definition.defaultAnimationKey
 
     /** Whether static-idle (reduced-motion) mode is active. */
     public var isPinned: Boolean by mutableStateOf(false)
@@ -127,14 +149,15 @@ public class PetHostState internal constructor(
  *
  * @param initialXDp starting horizontal position in dp.
  * @param initialYDp starting vertical position in dp.
- * @param initialAnimation starting animation intent.
+ * @param initialAnimation starting animation intent, or `null` (the default)
+ *   to follow the bound definition's default animation.
  * @param initiallyVisible starting visibility.
  */
 @Composable
 public fun rememberPetHostState(
     initialXDp: Float = 0f,
     initialYDp: Float = 0f,
-    initialAnimation: PetAnimationKey = PetAnimations.Idle,
+    initialAnimation: PetAnimationKey? = null,
     initiallyVisible: Boolean = true,
 ): PetHostState = remember {
     PetHostState(

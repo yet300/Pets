@@ -27,6 +27,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private fun testDefinition(json: String = "{}"): PetDefinition {
@@ -99,8 +100,11 @@ class PetHostJvmTest {
             waitForIdle()
             // Successful composition without crash proves the common InApp
             // path works on JVM; host intent is untouched by composition.
+            // A fresh state expresses no explicit request (null), and binding
+            // resolves it to the definition default without rewriting it.
             assertTrue(host.isVisible)
-            assertEquals(PetAnimations.Idle, host.requestedAnimation)
+            assertNull(host.requestedAnimation)
+            assertEquals(definition.defaultAnimationKey, host.effectiveAnimation(definition))
         }
     }
 
@@ -291,19 +295,20 @@ class PetHostJvmTest {
     }
 
     @Test
-    fun hostPlayMatchesPlayerSemantics() {
-        // Host requested Idle -> same sample as Phase 3 player Idle.
+    fun hostNullIntentResolvesToDefinitionDefault() {
+        // Null (no explicit request) resolves to the definition default;
+        // explicit play is preserved verbatim.
         val definition = testDefinition()
-        val host = PetHostState(animation = PetAnimations.Idle)
-        val expectedIdle = samplePetAnimation(definition, PetAnimations.Idle, 0L)
+        val host = PetHostState()
+        assertNull(host.requestedAnimation)
         assertEquals(
-            expectedIdle,
-            samplePetAnimation(definition, host.requestedAnimation, 0L),
+            samplePetAnimation(definition, definition.defaultAnimationKey, 0L),
+            samplePetAnimation(definition, host.effectiveAnimation(definition), 0L),
         )
         host.play(PetAnimations.Waving)
         assertEquals(
             samplePetAnimation(definition, PetAnimations.Waving, 0L),
-            samplePetAnimation(definition, host.requestedAnimation, 0L),
+            samplePetAnimation(definition, host.effectiveAnimation(definition), 0L),
         )
     }
 
@@ -317,7 +322,7 @@ class PetHostJvmTest {
             setContent {
                 val player = rememberPetPlayerState(definition, atlas)
                 LaunchedEffect(host.requestedAnimation) {
-                    player.play(host.requestedAnimation)
+                    player.play(host.effectiveAnimation(definition))
                 }
                 observedAnimation = player.currentSample.animation
                 CodexPet(player)
@@ -344,7 +349,7 @@ class PetHostJvmTest {
             setContent {
                 val player = rememberPetPlayerState(definition, atlas)
                 LaunchedEffect(host.requestedAnimation) {
-                    player.play(host.requestedAnimation)
+                    player.play(host.effectiveAnimation(definition))
                 }
                 observed = player.atlasState
                 CodexPet(player)

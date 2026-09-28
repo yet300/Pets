@@ -11,7 +11,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.runtime.mutableStateOf
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.yet.pets.core.PetAnimations
 import com.yet.pets.compose.PetAtlasState
 import androidx.lifecycle.Lifecycle
 import com.yet.pets.core.PetPackageParser
@@ -26,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -372,7 +372,7 @@ class AndroidHostOverlayTest {
         state.moveTo(56f, 78f)
         assertEquals(56f, state.xDp)
         assertEquals(78f, state.yDp)
-        assertEquals(PetAnimations.Idle, state.requestedAnimation)
+        assertNull(state.requestedAnimation)
     }
 
     @Test

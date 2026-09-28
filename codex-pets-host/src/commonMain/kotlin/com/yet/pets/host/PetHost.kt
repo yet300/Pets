@@ -94,10 +94,12 @@ internal fun PetInAppHost(
     PetHostPlayerTestProbe.onPlayer?.invoke(player)
 
     // Host intent -> player. Effects only; drawing never mutates intent.
+    // A null request follows the definition default (never a foreign sentinel);
+    // the public requestedAnimation value is never rewritten here.
     // Same-key plays are no-ops inside the player, so drag/position updates
     // never restart the animation.
     LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
-        player.play(state.requestedAnimation)
+        player.play(state.effectiveAnimation(definition))
         if (state.isPinned) {
             player.pinToDefault()
         } else if (player.isPinned) {

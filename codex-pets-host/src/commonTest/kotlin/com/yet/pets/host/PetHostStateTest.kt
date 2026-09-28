@@ -5,6 +5,7 @@ import com.yet.pets.core.PetAnimationKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 
@@ -70,9 +71,19 @@ class PetHostStateTest {
     }
 
     @Test
+    fun defaultRequestedAnimationIsNull() {
+        // No explicit request: callers need no definition merely to create state,
+        // and generic definitions never see a foreign idle sentinel.
+        val state = PetHostState()
+        assertNull(state.requestedAnimation)
+        val explicit = PetHostState(animation = PetAnimations.Idle)
+        assertEquals(PetAnimations.Idle, explicit.requestedAnimation)
+    }
+
+    @Test
     fun playUpdatesRequestedAnimation() {
-        val state = PetHostState(animation = PetAnimations.Idle)
-        assertEquals(PetAnimations.Idle, state.requestedAnimation)
+        val state = PetHostState()
+        assertNull(state.requestedAnimation)
         state.play(PetAnimations.Waving)
         assertEquals(PetAnimations.Waving, state.requestedAnimation)
         state.play(PetAnimationKey("custom-dance"))
@@ -83,7 +94,7 @@ class PetHostStateTest {
     fun pinAndResumeTogglePinned() {
         val state = PetHostState()
         assertFalse(state.isPinned)
-        state.pinToIdle()
+        state.pinToDefault()
         assertTrue(state.isPinned)
         // Playing while pinned records intent but stays pinned.
         state.play(PetAnimations.Running)
@@ -153,15 +164,15 @@ class PetHostStateTest {
     @Test
     fun twoHostsAreIndependent() {
         val a = PetHostState(xDp = 0f, yDp = 0f, animation = PetAnimations.Idle)
-        val b = PetHostState(xDp = 0f, yDp = 0f, animation = PetAnimations.Idle)
+        val b = PetHostState(xDp = 0f, yDp = 0f)
         a.moveTo(100f, 200f)
         a.play(PetAnimations.Waving)
-        a.pinToIdle()
+        a.pinToDefault()
         a.hide()
         // B untouched.
         assertEquals(0f, b.xDp)
         assertEquals(0f, b.yDp)
-        assertEquals(PetAnimations.Idle, b.requestedAnimation)
+        assertNull(b.requestedAnimation)
         assertFalse(b.isPinned)
         assertTrue(b.isVisible)
         // A holds its intent.
@@ -175,7 +186,7 @@ class PetHostStateTest {
     @Test
     fun moveToDoesNotChangeAnimationOrPinned() {
         val state = PetHostState(animation = PetAnimations.Waving)
-        state.pinToIdle()
+        state.pinToDefault()
         state.moveTo(33f, 44f)
         // Position moves; animation intent and pinned state are untouched.
         assertEquals(33f, state.xDp)

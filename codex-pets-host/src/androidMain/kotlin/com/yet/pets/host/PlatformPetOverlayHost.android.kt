@@ -282,7 +282,7 @@ internal actual fun PlatformPetOverlayHost(
             val player = rememberPetPlayerState(definition, spritesheetBytes)
             AndroidOverlayTestProbe.onAtlasState?.invoke(player.atlasState)
             LaunchedEffect(player, state.requestedAnimation, state.isPinned) {
-                player.play(state.requestedAnimation)
+                player.play(state.effectiveAnimation(definition))
                 if (state.isPinned) player.pinToDefault() else if (player.isPinned) player.resume()
             }
             if (state.isVisible) {
