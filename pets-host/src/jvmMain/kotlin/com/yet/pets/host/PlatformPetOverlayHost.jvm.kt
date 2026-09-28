@@ -20,7 +20,11 @@ import com.yet.pets.compose.Pet
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetDefinition
 import java.awt.Color
+import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
+import java.awt.Point
+import java.awt.Rectangle
+import java.awt.Toolkit
 import javax.swing.JWindow
 import javax.swing.SwingUtilities
 
@@ -84,6 +88,13 @@ internal class RealJvmOverlayWindow : JvmOverlayWindow {
                 // has no decorations so only the pet is visible, floating above
                 // other application windows.
                 background = Color(0, 0, 0, 0)
+                rootPane.isOpaque = false
+                rootPane.background = Color(0, 0, 0, 0)
+                contentPane.background = Color(0, 0, 0, 0)
+                (contentPane as? javax.swing.JComponent)?.isOpaque = false
+                layeredPane.isOpaque = false
+                glassPane.background = Color(0, 0, 0, 0)
+                (glassPane as? javax.swing.JComponent)?.isOpaque = false
                 isAlwaysOnTop = true
                 // JWindow is undecorated and non-resizable by construction.
                 focusableWindowState = false
@@ -121,10 +132,48 @@ internal class RealJvmOverlayWindow : JvmOverlayWindow {
     override val isShowing: Boolean get() = onSwingEdt { showing && window?.isVisible == true }
 }
 
+/** Clamp against individual displays, preserving negative virtual coordinates. */
+internal fun recoverableOverlayLocation(
+    requested: Point,
+    width: Int,
+    height: Int,
+    displays: List<Rectangle>,
+): Point {
+    if (displays.isEmpty()) return requested
+    val reachableWidth = width.coerceAtMost(48).coerceAtLeast(1)
+    val reachableHeight = height.coerceAtMost(48).coerceAtLeast(1)
+    return displays.filter { it.width > 0 && it.height > 0 }.map { bounds ->
+        Point(
+            requested.x.coerceIn(bounds.x - width + reachableWidth, bounds.x + bounds.width - reachableWidth),
+            requested.y.coerceIn(bounds.y - height + reachableHeight, bounds.y + bounds.height - reachableHeight),
+        )
+    }.minByOrNull { candidate ->
+        val dx = candidate.x.toDouble() - requested.x
+        val dy = candidate.y.toDouble() - requested.y
+        dx * dx + dy * dy
+    } ?: requested
+}
+
+internal fun usableDesktopBounds(): List<Rectangle> {
+    if (GraphicsEnvironment.isHeadless()) return emptyList()
+    val toolkit = Toolkit.getDefaultToolkit()
+    return GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { device: GraphicsDevice ->
+        val configuration = device.defaultConfiguration
+        val bounds = Rectangle(configuration.bounds)
+        val insets = toolkit.getScreenInsets(configuration)
+        bounds.x += insets.left
+        bounds.y += insets.top
+        bounds.width -= insets.left + insets.right
+        bounds.height -= insets.top + insets.bottom
+        bounds
+    }
+}
+
 /** Pure position/state adapter: no AWT calls except through [JvmOverlayWindow]. */
 internal class JvmPetOverlayController(
     private val window: JvmOverlayWindow,
     private var densityScale: Float = 1f,
+    private val displays: () -> List<Rectangle> = ::usableDesktopBounds,
 ) {
     var petWidthPx: Int = (PetHostDefaultPetWidthDp * densityScale).toInt().coerceAtLeast(1)
         private set
@@ -141,13 +190,18 @@ internal class JvmPetOverlayController(
         if (scale.isFinite() && scale > 0f) densityScale = scale
     }
 
-    fun showAt(xDp: Float, yDp: Float) {
-        window.moveTo(dpToPx(xDp), dpToPx(yDp))
+    fun showAt(xDp: Float, yDp: Float): Pair<Float, Float> {
+        val actual = moveTo(xDp, yDp)
         window.setVisible(true)
+        return actual
     }
 
-    fun moveTo(xDp: Float, yDp: Float) {
-        window.moveTo(dpToPx(xDp), dpToPx(yDp))
+    fun moveTo(xDp: Float, yDp: Float): Pair<Float, Float> {
+        val safe = recoverableOverlayLocation(
+            Point(dpToPx(xDp), dpToPx(yDp)), petWidthPx, petHeightPx, displays(),
+        )
+        window.moveTo(safe.x, safe.y)
+        return pxToDp(safe.x) to pxToDp(safe.y)
     }
 
     fun hide() {
@@ -217,7 +271,11 @@ internal actual fun PlatformPetOverlayHost(
         val petWidthPx = controller.dpToPx(petWidthDp).coerceAtLeast(1)
         val petHeightPx = controller.dpToPx(petHeightDp).coerceAtLeast(1)
         val panel = onSwingEdt {
-            ComposePanel().apply { setSize(petWidthPx, petHeightPx) }
+            ComposePanel().apply {
+                isOpaque = false
+                background = Color(0, 0, 0, 0)
+                setSize(petWidthPx, petHeightPx)
+            }
         }
         onSwingEdt {
             panel.setContent {
@@ -233,12 +291,12 @@ internal actual fun PlatformPetOverlayHost(
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
                                     // Desktop drag moves the overlay window itself.
-                                    val dxDp = controller.pxToDp(dragAmount.x.toInt())
-                                    val dyDp = controller.pxToDp(dragAmount.y.toInt())
+                                    val dxDp = dragAmount.x / composeDensity
+                                    val dyDp = dragAmount.y / composeDensity
                                     val nextX = state.xDp + dxDp
                                     val nextY = state.yDp + dyDp
-                                    state.moveTo(nextX, nextY)
-                                    controller.moveTo(nextX, nextY)
+                                    val (actualX, actualY) = controller.moveTo(nextX, nextY)
+                                    state.moveTo(actualX, actualY)
                                 }
                             },
                     ) {
@@ -266,8 +324,10 @@ internal actual fun PlatformPetOverlayHost(
         val window = current.overlay.windowRef() ?: return@SideEffect
         current.controller.updateScale(composeDensity)
         if (desiredVisible) {
-            if (current.overlay.isShowing) current.controller.moveTo(desiredX, desiredY)
+            val (actualX, actualY) = if (current.overlay.isShowing)
+                current.controller.moveTo(desiredX, desiredY)
             else current.controller.showAt(desiredX, desiredY)
+            if (actualX != desiredX || actualY != desiredY) state.moveTo(actualX, actualY)
             state.reportOverlay(current.ownerToken, PetHostPlatformState.Showing)
         } else {
             current.controller.hide()

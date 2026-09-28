@@ -18,6 +18,7 @@ import com.yet.pets.core.samplePetAnimation
 import java.awt.image.BufferedImage
 import java.awt.GraphicsEnvironment
 import java.awt.Window
+import java.awt.Rectangle
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import javax.swing.JWindow
@@ -160,7 +161,10 @@ class PetHostJvmTest {
     @Test
     fun overlayControllerAllowsNegativeDesktopCoordinates() {
         val fake = FakeJvmWindow()
-        val controller = JvmPetOverlayController(fake, densityScale = 1f)
+        val controller = JvmPetOverlayController(
+            fake, densityScale = 1f,
+            displays = { listOf(Rectangle(-1920, -1080, 1920, 1080), Rectangle(0, 0, 1920, 1080)) },
+        )
         controller.configure(96, 104)
         // Multi-monitor: negative coordinates are representable (no >= 0 clamp).
         controller.showAt(-500f, -300f)
@@ -182,6 +186,10 @@ class PetHostJvmTest {
             val window = onSwingEdt { (Window.getWindows().toSet() - prior).filterIsInstance<JWindow>().single() }
             assertTrue(onSwingEdt { window.isVisible && window.isDisplayable && window.isAlwaysOnTop })
             assertTrue(onSwingEdt { window.width in 1..2_000 && window.height in 1..2_000 })
+            assertEquals(0, onSwingEdt { window.background.alpha })
+            assertFalse(onSwingEdt { window.rootPane.isOpaque })
+            assertFalse(onSwingEdt { (window.contentPane as javax.swing.JComponent).isOpaque })
+            assertFalse(onSwingEdt { (window.contentPane.getComponent(0) as javax.swing.JComponent).isOpaque })
 
             host.moveTo(120f, 140f)
             waitForIdle()
@@ -225,6 +233,8 @@ class PetHostJvmTest {
         window.moveTo(25, 30)
         window.setVisible(true)
         assertTrue(onSwingEdt { window.windowRef()!!.isVisible })
+        assertTrue(onSwingEdt { !window.windowRef()!!.rootPane.isOpaque })
+        assertTrue(onSwingEdt { !(window.windowRef()!!.contentPane as javax.swing.JComponent).isOpaque })
         assertFalse(SwingUtilities.isEventDispatchThread())
         window.dispose()
         assertFalse(onSwingEdt { window.windowRef()!!.isDisplayable })
