@@ -1,0 +1,59 @@
+public final class com/yet/pets/host/PetHostKt {
+	public static final fun PetHost (Lcom/yet/pets/core/PetDefinition;[BLcom/yet/pets/host/PetHostState;Lcom/yet/pets/host/PetHostMode;Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class com/yet/pets/host/PetHostMode : java/lang/Enum {
+	public static final field InApp Lcom/yet/pets/host/PetHostMode;
+	public static final field SystemOverlay Lcom/yet/pets/host/PetHostMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/yet/pets/host/PetHostMode;
+	public static fun values ()[Lcom/yet/pets/host/PetHostMode;
+}
+
+public final class com/yet/pets/host/PetHostPlatformState : java/lang/Enum {
+	public static final field Hidden Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field PermissionRequired Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field PlatformRejected Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field Showing Lcom/yet/pets/host/PetHostPlatformState;
+	public static final field Unsupported Lcom/yet/pets/host/PetHostPlatformState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/yet/pets/host/PetHostPlatformState;
+	public static fun values ()[Lcom/yet/pets/host/PetHostPlatformState;
+}
+
+public final class com/yet/pets/host/PetHostState {
+	public static final field $stable I
+	public final fun effectiveAnimation (Lcom/yet/pets/core/PetDefinition;)Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getPlatformState ()Lcom/yet/pets/host/PetHostPlatformState;
+	public final fun getRequestedAnimation ()Lcom/yet/pets/core/PetAnimationKey;
+	public final fun getXDp ()F
+	public final fun getYDp ()F
+	public final fun hide ()V
+	public final fun isPinned ()Z
+	public final fun isVisible ()Z
+	public final fun moveTo (FF)V
+	public final fun pinToDefault ()V
+	public final fun pinToIdle ()V
+	public final fun play (Lcom/yet/pets/core/PetAnimationKey;)V
+	public final fun resume ()V
+	public final fun show ()V
+}
+
+public final class com/yet/pets/host/PetHostStateKt {
+	public static final fun rememberPetHostState (FFLcom/yet/pets/core/PetAnimationKey;ZLandroidx/compose/runtime/Composer;II)Lcom/yet/pets/host/PetHostState;
+}
+
+public final class com/yet/pets/host/PetSystemOverlayAvailability : java/lang/Enum {
+	public static final field Available Lcom/yet/pets/host/PetSystemOverlayAvailability;
+	public static final field BestEffort Lcom/yet/pets/host/PetSystemOverlayAvailability;
+	public static final field PermissionRequired Lcom/yet/pets/host/PetSystemOverlayAvailability;
+	public static final field Unsupported Lcom/yet/pets/host/PetSystemOverlayAvailability;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/yet/pets/host/PetSystemOverlayAvailability;
+	public static fun values ()[Lcom/yet/pets/host/PetSystemOverlayAvailability;
+}
+
+public final class com/yet/pets/host/RememberOverlayAvailabilityKt {
+	public static final fun rememberPetSystemOverlayAvailability (Landroidx/compose/runtime/Composer;I)Lcom/yet/pets/host/PetSystemOverlayAvailability;
+}
+
