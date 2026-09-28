@@ -162,13 +162,25 @@ public Okio Path for Kotlin aesthetics.
 
 ### 5.1 Accepted inputs
 
-- Directory containing `pet.json` (preferred) or legacy `avatar.json` (CLI parity).
-- ZIP archive resolving to exactly one package (see §5.3).
+Scope note: Codex V1 and Pets KMP generic packages share the secure
+directory/ZIP implementation (§5.2–§5.4 limits, traversal, symlink, CRC,
+overlap, duplicate rules) but differ in manifest discovery and identity:
+
+- Codex V1: directory containing `pet.json` (preferred) or legacy
+  `avatar.json` (CLI parity); identity falls back to a caller-supplied
+  `fallbackId`.
+- Pets KMP generic v1 (our new format): directory containing `pet.json`
+  ONLY (no legacy `avatar.json`); identity is manifest-owned (`id` is
+  required), so the generic public APIs take no `fallbackId`.
+- ZIP archive resolving to exactly one package (see §5.3; same
+  pet.json/avatar.json split by format).
 - Raw bytes are supported only as `(manifestBytes, spritesheetBytes)` pairs or a
   ZIP blob — never a bare manifest without its asset, so "asset exists" stays
   invariant like the CLI's.
   `PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)` is the
-  bounded io-free pair path (64 KiB manifest, 8 MiB encoded sheet).
+  bounded io-free Codex pair path, and
+  `PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes)` the generic
+  one (64 KiB manifest, 8 MiB encoded sheet each).
 
 ### 5.2 Path confinement (mirrors CLI `resolve_spritesheet_path`, hardened for symlinks)
 
@@ -188,17 +200,21 @@ directory-backed packages use canonicalization, not just normalization:
   as missing-asset errors. Rationale: permit benign in-package links, block
   escape-by-link. This is stricter than the CLI (which has no canonicalization)
   and is recorded as a deliberate hardening, not CLI parity.
-- Missing `pet.json`/`avatar.json`, missing spritesheet file → deterministic
-  typed errors (not nulls, not silent omission — unlike Desktop's reported
-  silent-skip, our loader always reports).
+- Missing manifest (`pet.json`, plus `avatar.json` for Codex only), missing
+  spritesheet file → deterministic typed errors (not nulls, not silent
+  omission — unlike Desktop's reported silent-skip, our loader always
+  reports).
 
 ### 5.3 ZIP layout rule (deterministic, ambiguous → reject)
 
 Accept exactly these two shapes, else `PetLoadError.AmbiguousPackage`:
 
-1. `pet.json` (or `avatar.json`) at archive root (+ asset entries).
+1. `pet.json` (or Codex-legacy `avatar.json`) at archive root (+ asset entries).
 2. Exactly one top-level directory `<name>/` containing `pet.json` (or
-   `avatar.json`) — with no competing root manifest.
+   Codex-legacy `avatar.json`) — with no competing root manifest.
+
+Generic Pets KMP packages require `pet.json` (never `avatar.json`); a
+legacy-only generic archive reports `MissingManifest`.
 
 Reject: zero manifests, root + nested manifests, two nested candidate dirs,
 duplicate/conflicting entries for the same normalized path, symlink entries
@@ -213,25 +229,30 @@ entries into bounded buffers.
 
 ### 5.4 Resource limits (defined, not unlimited)
 
-| Limit | Value | Rationale |
+Global limits (both formats) vs. format-specific rules:
+
+| Limit | Value | Scope |
 |---|---|---|
-| Manifest size | 64 KiB | CLI has no cap; manifests are small JSON — fail fast on garbage |
-| Spritesheet file size | 8 MiB | 2x CLI download cap (4 MiB) to allow local lossless WebP/PNG headroom |
-| Decoded atlas dimensions | must equal the CLI V1 profile: exactly 1536x1872 | exact-match like CLI; future profiles extend this table only with first-party sources |
-| ZIP entry count | ≤ 64 | packages hold ~2 files; 64 leaves margin, stops zip-of-death enumeration |
-| ZIP total compressed | ≤ 16 MiB | 2x spritesheet cap |
-| ZIP total uncompressed | ≤ 32 MiB | 4x spritesheet cap; bomb ratio guard |
-| Per-entry uncompressed | ≤ 32 MiB | single-entry bomb guard |
-| Compression ratio tripwire | fail if uncompressed > 100x compressed for the archive | classic zip-bomb signal |
-| Frame count | ≤ 256 | CLI `MAX_PET_FRAMES` parity |
-| Animation fps | finite, 0 < fps ≤ 60 | CLI `MAX_ANIMATION_FPS` parity |
-| Manifest `frame` grid | exact cover of decoded dims, all values non-zero | CLI parity |
+| Manifest size | 64 KiB | global: manifests are small JSON — fail fast on garbage (CLI has no cap) |
+| Spritesheet file size | 8 MiB | global: 2x CLI download cap (4 MiB) for local lossless WebP/PNG headroom |
+| ZIP entry count | ≤ 64 | global: packages hold ~2 files; 64 leaves margin, stops zip-of-death enumeration |
+| ZIP total compressed | ≤ 16 MiB | global: 2x spritesheet cap |
+| ZIP total uncompressed | ≤ 32 MiB | global: 4x spritesheet cap; bomb ratio guard |
+| Per-entry uncompressed | ≤ 32 MiB | global: single-entry bomb guard |
+| Compression ratio tripwire | fail if uncompressed > 100x compressed for the archive | global: classic zip-bomb signal |
+| Decoded atlas dimensions | exactly 1536x1872 | Codex V1 only: exact-match like CLI; generic Pets KMP derives arbitrary rectangular grids from probed dims + cell size |
+| Frame capacity | ≤ 256 | both: CLI `MAX_PET_FRAMES` parity for Codex; same safe envelope for generic (`columns * rows`) |
+| Animation fps | finite, 0 < fps ≤ 60 | Codex V1 only (`MAX_ANIMATION_FPS` parity); generic v1 uses per-frame `durationMs` |
+| Manifest `frame` grid | exact cover of decoded dims, all values non-zero | both (Codex: fixed V1 grid; generic: probed-dims arithmetic) |
 
 Streaming discipline: enforce caps while reading (running totals, abort early);
 bound raw archive size before indexing; never extract the archive to disk; read
 only the manifest + spritesheet entries into bounded buffers. Unknown manifest
-fields are ignored (CLI serde parity) with no unknown-key tracking. These
-runtime rules are enforced by `CodexCompatibilityValidator` and gate loading.
+fields are ignored (Codex: CLI serde parity; Pets KMP v1: documented
+forward-compatibility promise in `docs/spec/PETS_KMP_PACKAGE_V1.md` §3.2) with
+no unknown-key tracking. These runtime rules are enforced by
+`CodexCompatibilityValidator` (Codex) / the generic parser (Pets KMP) and gate
+loading.
 
 ### 5.5 Two validation layers (mandatory separation)
 
@@ -301,7 +322,10 @@ CodexProfile (internal sealed): CliV1 (+ future first-party profiles only)
 profileFor(spritesheetInfo): CodexProfile   // keyed by decoded DIMENSIONS
 ```
 
-- v1.0 ships `CliV1` only: 1536x1872, 9-row table, CLI validation/timing.
+- The Codex compatibility side ships `CliV1` only: 1536x1872, 9-row table,
+  CLI validation/timing. This is Codex-specific: the generic Pets KMP runtime
+  (arbitrary geometry, definition-owned defaults, nullable intents/fallbacks)
+  is profile-free and sits underneath the adapter.
 - The selector keys on **decoded dimensions** — never on a version number alone
   (lesson C4: two geometries share the "v2" label). Unknown dimensions are a
   validation error, not a silent fallback.

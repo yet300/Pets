@@ -673,7 +673,7 @@ final class com.yet.pets.core/IntRect { // com.yet.pets.core/IntRect|null[0]
 
 final class com.yet.pets.core/PetAnimation { // com.yet.pets.core/PetAnimation|null[0]
     final val fallback // com.yet.pets.core/PetAnimation.fallback|{}fallback[0]
-        final fun <get-fallback>(): com.yet.pets.core/PetAnimationKey // com.yet.pets.core/PetAnimation.fallback.<get-fallback>|<get-fallback>(){}[0]
+        final fun <get-fallback>(): com.yet.pets.core/PetAnimationKey? // com.yet.pets.core/PetAnimation.fallback.<get-fallback>|<get-fallback>(){}[0]
     final val frames // com.yet.pets.core/PetAnimation.frames|{}frames[0]
         final fun <get-frames>(): kotlin.collections/List<com.yet.pets.core/PetFrame> // com.yet.pets.core/PetAnimation.frames.<get-frames>|<get-frames>(){}[0]
     final val loopStart // com.yet.pets.core/PetAnimation.loopStart|{}loopStart[0]
@@ -693,11 +693,6 @@ final class com.yet.pets.core/PetAnimationKey { // com.yet.pets.core/PetAnimatio
     final fun equals(kotlin/Any?): kotlin/Boolean // com.yet.pets.core/PetAnimationKey.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.yet.pets.core/PetAnimationKey.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.yet.pets.core/PetAnimationKey.toString|toString(){}[0]
-
-    final object Companion { // com.yet.pets.core/PetAnimationKey.Companion|null[0]
-        final const val MAX_KEY_LENGTH // com.yet.pets.core/PetAnimationKey.Companion.MAX_KEY_LENGTH|{}MAX_KEY_LENGTH[0]
-            final fun <get-MAX_KEY_LENGTH>(): kotlin/Int // com.yet.pets.core/PetAnimationKey.Companion.MAX_KEY_LENGTH.<get-MAX_KEY_LENGTH>|<get-MAX_KEY_LENGTH>(){}[0]
-    }
 }
 
 final class com.yet.pets.core/PetCompatibilityReport { // com.yet.pets.core/PetCompatibilityReport|null[0]
@@ -891,9 +886,9 @@ final object com.yet.pets.core/PetsKmpPackageParser { // com.yet.pets.core/PetsK
     final const val SCHEMA_VERSION // com.yet.pets.core/PetsKmpPackageParser.SCHEMA_VERSION|{}SCHEMA_VERSION[0]
         final fun <get-SCHEMA_VERSION>(): kotlin/Int // com.yet.pets.core/PetsKmpPackageParser.SCHEMA_VERSION.<get-SCHEMA_VERSION>|<get-SCHEMA_VERSION>(){}[0]
 
-    final fun parse(kotlin/ByteArray, kotlin/ByteArray, kotlin/String = ...): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parse|parse(kotlin.ByteArray;kotlin.ByteArray;kotlin.String){}[0]
-    final fun parseTrustedMetadata(kotlin/ByteArray, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.ByteArray;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
-    final fun parseTrustedMetadata(kotlin/String, kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.String;kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun parse(kotlin/ByteArray, kotlin/ByteArray): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parse|parse(kotlin.ByteArray;kotlin.ByteArray){}[0]
+    final fun parseTrustedMetadata(kotlin/ByteArray, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.ByteArray;com.yet.pets.core.SpritesheetInfo){}[0]
+    final fun parseTrustedMetadata(kotlin/String, com.yet.pets.core/SpritesheetInfo): com.yet.pets.core/PetsKmpParseOutcome // com.yet.pets.core/PetsKmpPackageParser.parseTrustedMetadata|parseTrustedMetadata(kotlin.String;com.yet.pets.core.SpritesheetInfo){}[0]
     final fun spritesheetPathOf(kotlin/ByteArray): com.yet.pets.core/PetsKmpSpritesheetPathOutcome // com.yet.pets.core/PetsKmpPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.ByteArray){}[0]
     final fun spritesheetPathOf(kotlin/String): com.yet.pets.core/PetsKmpSpritesheetPathOutcome // com.yet.pets.core/PetsKmpPackageParser.spritesheetPathOf|spritesheetPathOf(kotlin.String){}[0]
 }

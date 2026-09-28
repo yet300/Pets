@@ -16,13 +16,17 @@ The manifest document MUST self-identify:
 ```
 
 - `schema` MUST equal `"pets-kmp"`.
-- `schemaVersion` MUST equal integer `1`.
+- `schemaVersion` MUST equal integer `1` (unquoted JSON integer token; see
+  §3.1 strict integer syntax).
 - Never infer generic format merely because Codex parsing failed. Use the
   explicit `PetsKmpPackageParser` / `PetLoader.loadPetsKmpZip` /
   `PetLoader.loadPetsKmpDirectory` entry points.
 
-Manifest filename may remain `pet.json` (with legacy `avatar.json` discovery
-in directory/ZIP packages), but the document content decides the format.
+Generic directory/ZIP package discovery requires `pet.json` only. Pets KMP
+is our new format and does not inherit the Codex legacy `avatar.json` name:
+a generic package containing only `avatar.json` fails with `MissingManifest`.
+(Codex V1 loaders retain `pet.json`/`avatar.json` discovery for
+compatibility.) The document content decides the format.
 
 ## 2. Shape
 
@@ -61,22 +65,54 @@ DTO representation remains internal. The public runtime model
 
 ## 3. Field rules
 
-- `id`: required non-blank.
+- `id`: required non-blank. Generic identity is manifest-owned: the public
+  generic parser/loader APIs take no caller-supplied fallback identity
+  (unlike the Codex adapter, where transport-derived fallback ids exist).
 - `displayName`: required non-blank.
 - `description`: optional; defaults to `""` after trimming.
 - `spritesheetPath`: optional; when absent or blank defaults to
   `spritesheet.webp`. Path-confinement protections still apply (relative
   child only; no `..`, absolute, drive prefix, or backslashes; canonical
   containment; ZIP traversal/duplicate/symlink rules).
-- `frame.width` / `frame.height`: required positive integers (cell size).
+- `frame.width` / `frame.height`: required positive integers (cell size;
+  strict syntax per §3.1).
 - `defaultAnimation`: required non-blank; MUST reference an existing
-  animation key.
-- `animations`: required; at least one; unique keys. No speculative fields.
+  animation key (compared after key trimming, case-sensitively).
+- `animations`: required; at least one; unique keys (after trimming).
 
-Animation keys: non-blank, at most 64 characters, deterministic
-equality/hashCode, no platform-dependent behavior. Arbitrary keys such as
-`idle`, `sleep`, `eat`, `dance`, `happy`, `angry`, `scratch`, `spin`,
-`celebrate`, `stand`, `blink` work without library changes.
+Animation keys (manifest normalization): `animation.key` and
+`defaultAnimation` are trimmed during manifest normalization; comparison
+occurs after trimming; keys are case-sensitive (`Dance` differs from
+`dance`); blank-after-trim is invalid. There is no separate string-length
+cap: the whole manifest is bounded to 64 KiB. This is format normalization,
+not model validation — the normalized `PetAnimationKey` model itself
+preserves its exact value (`PetAnimationKey(" dance ")` differs from
+`PetAnimationKey("dance")` by design). Arbitrary keys such as `idle`,
+`sleep`, `eat`, `dance`, `happy`, `angry`, `scratch`, `spin`, `celebrate`,
+`stand`, `blink` work without library changes.
+
+### 3.1 Strict integer JSON syntax
+
+All integer fields (`schemaVersion`, `frame.width`, `frame.height`,
+`animation.loopStart`, `frame.index`, `frame.durationMs`) MUST be unquoted
+JSON integer tokens.
+
+Accepted lexical grammar: `-?(0|[1-9][0-9]*)`. Each field's semantic range
+validation applies afterwards (positive cell size, `0 <= loopStart <
+frames.size`, `0 <= index < frameCapacity`, positive `durationMs` with
+overflow-checked ms-to-nanos conversion, `schemaVersion == 1`).
+
+Rejected (deterministic typed failure, never a crash): `"1"`, `"0"`
+(quoted), `1.0`, `0.0` (decimal), `1e0`, `1E0`, `1E+0` (exponent),
+booleans, nulls where required, objects, arrays, and out-of-range integers.
+Codex DTO parsing is unaffected: this rule is generic-format-only.
+
+### 3.2 Unknown JSON fields
+
+Unknown fields are ignored (forward-compatible) at any object level handled
+by the normal DTO decoder — top-level, `frame`, animation entries, and frame
+entries. `schemaVersion` still gates incompatible format versions: unknown
+fields never excuse a wrong or missing version.
 
 ## 4. Geometry
 
@@ -108,23 +144,38 @@ Reject zero, negative, and overflow. No floating-point durations in v1.
 
 ## 6. Loop semantics
 
-- `loopStart = null` / absent: one-shot animation; hold final frame when
-  complete.
+- `loopStart = null` / absent: one-shot animation; play frames once, then
+  hold the final frame forever (`nextFrameInNanos = null`).
 - `loopStart = N`: after the final frame, continue from frame index `N`.
 
 Validate `0 <= N < frames.size`.
 
 Do NOT automatically append the default animation. Do NOT inherit Codex's
 three-primary-passes-plus-idle chain. The Codex adapter builds that explicit
-`PetAnimation` representation itself; generic one-shot hold is modeled with a
-self-fallback so the shared one-hop player holds without appending anything.
+`PetAnimation` representation itself.
+
+Runtime note: the normalized model represents a generic one-shot directly as
+`loopStart == null` with `fallback == null` (no fallback transition). The
+sampler holds the final frame of the SELECTED animation under the same key.
+No fabricated self-transition is encoded.
 
 ## 7. No generic fallback field
 
-Format v1 has NO generic JSON `fallback` field. One small unambiguous runtime
-contract. Existing internal fallback mechanics needed for Codex remain, but
-generic packages do not expose them. A later schema version may add
-transitions/fallbacks after requirements exist.
+Format v1 has NO generic JSON `fallback` field. Parsed generic animations
+expose `PetAnimation.fallback == null` unless some future adapter explicitly
+provides one. The Codex V1 adapter keeps its exact fallback behavior
+(non-null fallbacks, at most one hop, same elapsed clock). A later schema
+version may add transitions/fallbacks after requirements exist.
+
+## 7.1 Unknown requested animation (generic runtime policy)
+
+Requesting an animation key absent from the definition (a typo, or a key
+missing after rebinding) samples the definition-owned
+`defaultAnimationKey`. This is generic *playback* policy for an unknown
+requested key. It is separate from `PetAnimation.fallback` (a declared
+animation transition, always null for generic v1) and separate from the
+Pets KMP manifest (which has no fallback concept). Public host intent keeps
+the explicit requested key; only the sampled pixels resolve to the default.
 
 ## 8. Limits
 
@@ -161,6 +212,12 @@ No exception leakage for malformed untrusted data. Typed failures cover:
 
 See `assets/kodee/pet.pets-kmp.json` for a real 1536x2288, 8x11, 88-frame
 example with `idle`, `wave`, `jump`, `happy`, and `rest`.
+
+Note: the Kodee spritesheet changed after the V2 research snapshot, so its
+current hash differs from the hash recorded in
+`docs/research/CODEX_V2_COMPATIBILITY_RESEARCH.md`. Historical research
+evidence is not rewritten; the current asset revision is what the generic
+manifest and tests describe.
 
 ## 12. What this is not
 

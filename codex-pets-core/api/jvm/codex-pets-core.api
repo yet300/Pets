@@ -69,16 +69,11 @@ public final class com/yet/pets/core/PetAnimation {
 }
 
 public final class com/yet/pets/core/PetAnimationKey {
-	public static final field Companion Lcom/yet/pets/core/PetAnimationKey$Companion;
-	public static final field MAX_KEY_LENGTH I
 	public fun <init> (Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/yet/pets/core/PetAnimationKey$Companion {
 }
 
 public final class com/yet/pets/core/PetAnimations {
@@ -631,10 +626,9 @@ public final class com/yet/pets/core/PetsKmpPackageParser {
 	public static final field MAX_FRAME_CAPACITY I
 	public static final field SCHEMA Ljava/lang/String;
 	public static final field SCHEMA_VERSION I
-	public final fun parse ([B[BLjava/lang/String;)Lcom/yet/pets/core/PetsKmpParseOutcome;
-	public static synthetic fun parse$default (Lcom/yet/pets/core/PetsKmpPackageParser;[B[BLjava/lang/String;ILjava/lang/Object;)Lcom/yet/pets/core/PetsKmpParseOutcome;
-	public final fun parseTrustedMetadata (Ljava/lang/String;Ljava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetsKmpParseOutcome;
-	public final fun parseTrustedMetadata ([BLjava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetsKmpParseOutcome;
+	public final fun parse ([B[B)Lcom/yet/pets/core/PetsKmpParseOutcome;
+	public final fun parseTrustedMetadata (Ljava/lang/String;Lcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetsKmpParseOutcome;
+	public final fun parseTrustedMetadata ([BLcom/yet/pets/core/SpritesheetInfo;)Lcom/yet/pets/core/PetsKmpParseOutcome;
 	public final fun spritesheetPathOf (Ljava/lang/String;)Lcom/yet/pets/core/PetsKmpSpritesheetPathOutcome;
 	public final fun spritesheetPathOf ([B)Lcom/yet/pets/core/PetsKmpSpritesheetPathOutcome;
 }

@@ -232,8 +232,8 @@ public final class com/yet/pets/io/PetLoader {
 	public static synthetic fun loadPetZip$default (Lcom/yet/pets/io/PetLoader;[BLjava/lang/String;Lcom/yet/pets/io/PetPackageLimits;ILjava/lang/Object;)Lcom/yet/pets/io/PetLoadOutcome;
 	public final fun loadPetsKmpDirectory (Ljava/lang/String;Lcom/yet/pets/io/PetPackageLimits;)Lcom/yet/pets/io/PetLoadOutcome;
 	public static synthetic fun loadPetsKmpDirectory$default (Lcom/yet/pets/io/PetLoader;Ljava/lang/String;Lcom/yet/pets/io/PetPackageLimits;ILjava/lang/Object;)Lcom/yet/pets/io/PetLoadOutcome;
-	public final fun loadPetsKmpZip ([BLjava/lang/String;Lcom/yet/pets/io/PetPackageLimits;)Lcom/yet/pets/io/PetLoadOutcome;
-	public static synthetic fun loadPetsKmpZip$default (Lcom/yet/pets/io/PetLoader;[BLjava/lang/String;Lcom/yet/pets/io/PetPackageLimits;ILjava/lang/Object;)Lcom/yet/pets/io/PetLoadOutcome;
+	public final fun loadPetsKmpZip ([BLcom/yet/pets/io/PetPackageLimits;)Lcom/yet/pets/io/PetLoadOutcome;
+	public static synthetic fun loadPetsKmpZip$default (Lcom/yet/pets/io/PetLoader;[BLcom/yet/pets/io/PetPackageLimits;ILjava/lang/Object;)Lcom/yet/pets/io/PetLoadOutcome;
 }
 
 public final class com/yet/pets/io/PetPackageLimits {

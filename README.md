@@ -65,7 +65,7 @@ when (parsed) {
 Generic Pets KMP v1:
 
 ```kotlin
-val parsed = PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId = "kodee")
+val parsed = PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes)
 when (parsed) {
     is PetsKmpParseOutcome.Success -> {
         val state = rememberPetPlayerState(parsed.definition, spritesheetBytes)
@@ -74,6 +74,12 @@ when (parsed) {
     is PetsKmpParseOutcome.Failure -> showErrors(parsed.report.errors)
 }
 ```
+
+Generic identity is manifest-owned (`id` is required), so the generic APIs
+take no caller fallback id. Generic integer fields use strict JSON syntax
+(unquoted `-?(0|[1-9][0-9]*)` tokens), unknown fields are ignored, manifest
+keys are trimmed (non-blank, case-sensitive), and generic discovery requires
+`pet.json` — see `docs/spec/PETS_KMP_PACKAGE_V1.md`.
 
 The raw parser checks manifest bytes ≤ 64 KiB and encoded image bytes ≤ 8 MiB,
 probes format and dimensions, then validates the definition. Callers do not
@@ -115,11 +121,16 @@ CLI dependency, which accepts animated WebP metadata and opens its first frame.
 ## Pet hosting
 
 ```kotlin
-val host = rememberPetHostState()
+val host = rememberPetHostState() // no explicit animation request (null)
 val availability = rememberPetSystemOverlayAvailability()
 PetHost(definition, spritesheetBytes, host, PetHostMode.InApp)
 // host.show()/hide()/moveTo()/play()/pinToDefault()/resume()
 ```
+
+A null host request follows the bound definition's default animation
+(`host.effectiveAnimation(definition)`); rendering never rewrites public
+intent. Generic one-shots (`fallback == null`) hold their final frame;
+Codex V1 definitions keep their exact single-fallback-hop behavior.
 
 `InApp` is supported on Android/JVM/iOS. Floating outside the app is a
 platform capability: Android needs `SYSTEM_ALERT_WINDOW`

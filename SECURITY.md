@@ -6,6 +6,11 @@ does not grant another layer's guarantees.
 
 ## A. Directory and ZIP packages (`:codex-pets-io`)
 
+These bounds and checks apply identically to Codex V1 and Pets KMP generic
+packages (one shared implementation; only manifest discovery and identity
+differ — generic requires `pet.json` with manifest-owned identity, Codex
+keeps legacy `avatar.json` discovery with a caller fallback id).
+
 - Manifest ≤ 64 KiB; encoded sheet ≤ 8 MiB. Actual reads are capped, not just
   declarations.
 - ZIP: ≤ 64 entries, raw archive ≤ 16 MiB, expanded total and per entry ≤
@@ -23,13 +28,19 @@ does not grant another layer's guarantees.
 
 ## B. Raw manifest and image bytes (`:codex-pets-core`)
 
-`PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)` checks
-manifest ≤ 64 KiB and encoded sheet ≤ 8 MiB before parsing/probing. It returns
-typed failures for malformed JSON, image metadata, animated WebP, invalid
-geometry, and compatibility errors. The String and `spritesheetPathOf`
-overloads are also bounded by UTF-8 manifest size. `parseTrustedMetadata` is
-an expert seam: its caller supplies image facts, so it cannot prove that those
-facts match any image bytes.
+`PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)` (Codex
+V1) and `PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes)`
+(generic v1, manifest-owned identity, no fallback id) each check manifest ≤
+64 KiB and encoded sheet ≤ 8 MiB before parsing/probing. They return typed
+failures for malformed JSON, image metadata, animated WebP, invalid geometry,
+and compatibility errors. The String and `spritesheetPathOf` overloads are
+also bounded by UTF-8 manifest size. `parseTrustedMetadata` is an expert
+seam: its caller supplies image facts, so it cannot prove that those facts
+match any image bytes.
+
+Generic v1 additionally enforces strict integer JSON syntax (unquoted
+`-?(0|[1-9][0-9]*)` tokens for every integer field; see
+`docs/spec/PETS_KMP_PACKAGE_V1.md` §3.1) before semantic validation.
 
 Raw parsing performs no filesystem/path-confinement or ZIP checks. Applications
 that receive bytes directly supply their own transport and storage policy.

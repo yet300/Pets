@@ -325,5 +325,5 @@ final object com.yet.pets.io/PetLoader { // com.yet.pets.io/PetLoader|null[0]
     final fun loadPetDirectory(kotlin/String, com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetDirectory|loadPetDirectory(kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
     final fun loadPetZip(kotlin/ByteArray, kotlin/String = ..., com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetZip|loadPetZip(kotlin.ByteArray;kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
     final fun loadPetsKmpDirectory(kotlin/String, com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetsKmpDirectory|loadPetsKmpDirectory(kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
-    final fun loadPetsKmpZip(kotlin/ByteArray, kotlin/String = ..., com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetsKmpZip|loadPetsKmpZip(kotlin.ByteArray;kotlin.String;com.yet.pets.io.PetPackageLimits){}[0]
+    final fun loadPetsKmpZip(kotlin/ByteArray, com.yet.pets.io/PetPackageLimits = ...): com.yet.pets.io/PetLoadOutcome // com.yet.pets.io/PetLoader.loadPetsKmpZip|loadPetsKmpZip(kotlin.ByteArray;com.yet.pets.io.PetPackageLimits){}[0]
 }
