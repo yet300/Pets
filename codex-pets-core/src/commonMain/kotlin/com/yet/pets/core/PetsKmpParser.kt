@@ -411,14 +411,13 @@ public object PetsKmpPackageParser {
                 )
                 continue
             }
-            // Generic v1 has no fallback field: one-shot holds its final frame.
-            // Model the hold with a self-fallback so the shared one-hop player
-            // holds without appending any default animation.
+            // Generic v1 has no fallback field: a completed one-shot holds its
+            // final frame (fallback == null). Never fabricate a self-fallback.
             try {
                 animations[key] = PetAnimation(
                     frames = frames,
                     loopStart = loopStart,
-                    fallback = key,
+                    fallback = null,
                 )
             } catch (e: IllegalArgumentException) {
                 errors += PetsKmpError.NormalizationFailed(

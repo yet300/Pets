@@ -60,6 +60,8 @@ class GenericDefaultTest {
     @Test
     fun oneShotWalkHoldsWithoutAppendingDefault() {
         val definition = standDefinition()
+        // Generic one-shots carry no fallback transition: fallback == null.
+        assertNull(definition.animation("walk")!!.fallback)
         val held = samplePetAnimation(definition, PetAnimationKey("walk"), 5_000_000_000L)
         assertEquals(PetAnimationKey("walk"), held.animation)
         assertEquals(2, held.spriteIndex)

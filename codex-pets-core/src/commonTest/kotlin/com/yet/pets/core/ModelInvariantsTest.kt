@@ -49,18 +49,19 @@ class ModelInvariantsTest {
         val geometry = CodexV1.defaultGeometry()
         val idle = mapOf(PetAnimations.Idle to CodexV1.idleAnimation())
         assertFailsWith<IllegalArgumentException> {
-            PetDefinition("a", "A", "", geometry, 0, idle)
+            PetDefinition("a", "A", "", geometry, 0, idle, defaultAnimationKey = PetAnimations.Idle)
         }
         assertFailsWith<IllegalArgumentException> {
-            PetDefinition("a", "A", "", geometry, 71, idle)
+            PetDefinition("a", "A", "", geometry, 71, idle, defaultAnimationKey = PetAnimations.Idle)
         }
         assertFailsWith<IllegalArgumentException> {
-            PetDefinition("a", "A", "", geometry, 72, emptyMap())
+            PetDefinition("a", "A", "", geometry, 72, emptyMap(), defaultAnimationKey = PetAnimations.Idle)
         }
         assertFailsWith<IllegalArgumentException> {
             PetDefinition(
                 "a", "A", "", geometry, 72,
                 mapOf(PetAnimationKey("x") to CodexV1.idleAnimation()),
+                defaultAnimationKey = PetAnimations.Idle,
             )
         }
     }
@@ -90,7 +91,10 @@ class ModelInvariantsTest {
         assertEquals(1, animation.frames.size)
 
         val map = mutableMapOf(PetAnimations.Idle to animation)
-        val definition = PetDefinition("a", "A", "", CodexV1.defaultGeometry(), 72, map)
+        val definition = PetDefinition(
+            "a", "A", "", CodexV1.defaultGeometry(), 72, map,
+            defaultAnimationKey = PetAnimations.Idle,
+        )
         map[PetAnimationKey("x")] = animation
         assertEquals(listOf(PetAnimations.Idle), definition.animationKeys)
     }
@@ -100,7 +104,10 @@ class ModelInvariantsTest {
         // Documented contract: later mutation of caller-owned collections cannot
         // mutate model state. No claim of JVM cast-proof immutability.
         val map = mutableMapOf(PetAnimations.Idle to CodexV1.idleAnimation())
-        val definition = PetDefinition("a", "A", "", CodexV1.defaultGeometry(), 72, map)
+        val definition = PetDefinition(
+            "a", "A", "", CodexV1.defaultGeometry(), 72, map,
+            defaultAnimationKey = PetAnimations.Idle,
+        )
         map.clear()
         assertEquals(1, definition.animationKeys.size)
     }
@@ -140,6 +147,7 @@ class ModelInvariantsTest {
         )
         val dangling = PetDefinition(
             "a", "A", "", CodexV1.defaultGeometry(), CodexV1.FRAME_COUNT, animations,
+            defaultAnimationKey = PetAnimations.Idle,
         )
         val report = CodexCompatibilityValidator.validate(
             dangling,
@@ -159,6 +167,7 @@ class ModelInvariantsTest {
         )
         val badIndex = PetDefinition(
             "a", "A", "", CodexV1.defaultGeometry(), CodexV1.FRAME_COUNT, animations2,
+            defaultAnimationKey = PetAnimations.Idle,
         )
         val report2 = CodexCompatibilityValidator.validate(
             badIndex,
@@ -170,6 +179,7 @@ class ModelInvariantsTest {
         val clean = PetDefinition(
             "a", "A", "", CodexV1.defaultGeometry(), CodexV1.FRAME_COUNT,
             CodexV1.defaultAnimations(),
+            defaultAnimationKey = PetAnimations.Idle,
         )
         val cleanReport = CodexCompatibilityValidator.validate(
             clean,

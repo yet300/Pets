@@ -288,10 +288,13 @@ public object PetPackageParser {
         }
 
         // Fallback existence against the final table (single-hop model: no traversal).
+        // Codex animations always carry a non-null fallback; a null fallback
+        // (generic one-shots) needs no existence check.
         for (key in animations.keys.sortedBy { it.value }) {
             val animation = animations.getValue(key)
-            if (!animations.containsKey(animation.fallback)) {
-                errors += PetCompatibilityError.UnknownFallback(key.value, animation.fallback.value)
+            val fallbackKey = animation.fallback
+            if (fallbackKey != null && !animations.containsKey(fallbackKey)) {
+                errors += PetCompatibilityError.UnknownFallback(key.value, fallbackKey.value)
             }
         }
 
@@ -446,8 +449,9 @@ public object CodexCompatibilityValidator {
                     break
                 }
             }
-            if (definition.animation(animation.fallback) == null) {
-                errors += PetCompatibilityError.UnknownFallback(key.value, animation.fallback.value)
+            val fallbackKey = animation.fallback
+            if (fallbackKey != null && definition.animation(fallbackKey) == null) {
+                errors += PetCompatibilityError.UnknownFallback(key.value, fallbackKey.value)
             }
         }
         return PetCompatibilityReport(errors)

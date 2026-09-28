@@ -26,6 +26,7 @@ class PlaybackTest {
             CodexV1.defaultGeometry(),
             CodexV1.FRAME_COUNT,
             animations,
+            defaultAnimationKey = PetAnimations.Idle,
         )
     }
 
@@ -285,7 +286,13 @@ class PlaybackTest {
         val animations = CodexV1.defaultAnimations().toMutableMap()
         animations[PetAnimationKey("a")] = oneShot(0, fallback = "ghost")
         val def = PetDefinition(
-            "t", "T", "", CodexV1.defaultGeometry(), CodexV1.FRAME_COUNT, animations,
+            "t",
+            "T",
+            "",
+            CodexV1.defaultGeometry(),
+            CodexV1.FRAME_COUNT,
+            animations,
+            defaultAnimationKey = PetAnimations.Idle,
         )
         val at = samplePetAnimation(def, PetAnimationKey("a"), 500_000_000L)
         assertEquals(PetAnimations.Idle, at.animation)

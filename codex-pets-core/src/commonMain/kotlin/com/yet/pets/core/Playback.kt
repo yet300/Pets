@@ -43,18 +43,24 @@ public fun staticIdleSpriteIndex(definition: PetDefinition): Int =
  *
  * Generic runtime with Codex animation-model parity and deterministic host
  * scheduling:
- * - unknown requested keys resolve to the definition-owned default animation,
+ * - unknown requested keys resolve to the definition-owned default animation
+ *   (generic runtime playback policy for an unknown requested key; separate
+ *   from [PetAnimation.fallback], which is a declared animation transition),
  * - prefix (`0 until loopStart`) plays once, suffix loops via duration modulo,
- * - a completed non-looping animation performs AT MOST ONE fallback hop
- *   (no recursion: the fallback's own completion is never inspected),
+ * - a completed non-looping animation with `fallback == null` (the generic
+ *   one-shot) holds the final frame of the SELECTED animation with
+ *   `nextFrameInNanos == null`,
+ * - a completed non-looping animation with a non-null fallback performs AT
+ *   MOST ONE fallback hop (no recursion: the fallback's own completion is
+ *   never inspected),
  * - the fallback is evaluated with the SAME original elapsed clock (never reset),
  * - scheduling ([PetPlaybackSample.nextFrameInNanos]) is our deterministic
  *   improvement: a non-looping single frame reports the remaining nanos to its
  *   fallback transition instead of the reference host's "no wake-up" quirk,
- * - a dangling fallback on a manually-built (validator-bypassed) definition
- *   resolves to the definition default to stay total; parser output can never
- *   dangle because fallback existence is validated (deliberate hardening,
- *   not parity).
+ * - a dangling non-null fallback on a manually-built (validator-bypassed)
+ *   definition resolves to the definition default to stay total; parser output
+ *   can never dangle because fallback existence is validated (deliberate
+ *   hardening, not parity).
  *
  * For Codex V1 definitions the default animation is `idle`, so the exact
  * Codex V1 semantics (unknown -> idle, fallback -> idle) are preserved.
@@ -79,6 +85,11 @@ public fun samplePetAnimation(
 
     if (selected.loopStart == null && elapsed >= totalNanos(selected)) {
         val fallbackKey = selected.fallback
+        if (fallbackKey == null) {
+            // Generic one-shot: play frames once, then hold the final frame of
+            // the SELECTED animation forever. No transition, no wake-up.
+            return frameAt(selected, selectedKey, elapsed)
+        }
         val fallback = definition.animation(fallbackKey) ?: definition.animation(defaultKey)
         val evaluatedKey = if (definition.animation(fallbackKey) != null) fallbackKey else defaultKey
         if (fallback == null) return PetPlaybackSample(defaultKey, 0, null)

@@ -61,7 +61,14 @@ public class PetFrame internal constructor(
 /**
  * One named animation track. [loopStart] is a frame-list index: non-null loops
  * the whole track from that index (prefix plays once, suffix loops); null is a
- * one-shot that holds its last frame and then hands off to [fallback].
+ * one-shot that plays its frames once and then holds its final frame.
+ *
+ * [fallback] is the optional single transition evaluated when a non-looping
+ * animation completes: `null` means no fallback transition (hold the final
+ * frame of the completed animation forever); non-null performs exactly one
+ * fallback hop with the same original elapsed clock (Codex V1 adapter
+ * behavior). Generic Pets KMP v1 packages declare no fallback, so their
+ * animations always carry `null` here.
  *
  * The constructor is internal (see [PetFrame]); the exposed [frames] list is a
  * defensive snapshot: later mutation of caller-owned input lists cannot mutate
@@ -70,7 +77,7 @@ public class PetFrame internal constructor(
 public class PetAnimation internal constructor(
     frames: List<PetFrame>,
     public val loopStart: Int?,
-    public val fallback: PetAnimationKey,
+    public val fallback: PetAnimationKey?,
 ) {
     public val frames: List<PetFrame> = frames.toList()
 
@@ -92,7 +99,7 @@ public class PetAnimation internal constructor(
     override fun hashCode(): Int {
         var result = frames.hashCode()
         result = 31 * result + (loopStart?.hashCode() ?: 0)
-        result = 31 * result + fallback.hashCode()
+        result = 31 * result + (fallback?.hashCode() ?: 0)
         return result
     }
 
@@ -119,6 +126,13 @@ public class PetAnimation internal constructor(
  * convert foreign-data violations to typed reports. Structural invariants
  * fail fast for programmer errors.
  *
+ * There is deliberately NO default for [defaultAnimationKey]: every adapter
+ * must supply it explicitly so no future format accidentally inherits Codex
+ * `idle` semantics. The compiler enforces this at every call site.
+ *
+ * @property frameCount atlas frame capacity (addressable cell count
+ *   `columns * rows`), not the number of used animation frames. Generic
+ *   sheets may leave cells unused.
  * @property defaultAnimationKey the definition-owned default animation. Every
  *   definition has one and it must exist in [animations]. The Codex V1 adapter
  *   sets this to `idle`; generic packages may choose `sleep`, `stand`,
@@ -132,7 +146,7 @@ public class PetDefinition internal constructor(
     public val geometry: AtlasGeometry,
     public val frameCount: Int,
     animations: Map<PetAnimationKey, PetAnimation>,
-    public val defaultAnimationKey: PetAnimationKey = PetAnimations.Idle,
+    public val defaultAnimationKey: PetAnimationKey,
 ) {
     private val lookup: Map<PetAnimationKey, PetAnimation> = animations.toMap()
 
