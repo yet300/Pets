@@ -85,6 +85,18 @@ public sealed interface PetLoadError {
     }
 
     /**
+     * Generic Pets KMP semantic validation rejected the package; carries the
+     * full generic report. Distinct from [CompatibilityFailure] so Codex and
+     * generic loaders never share failure semantics or messages.
+     */
+    public data class PetsKmpCompatibilityFailure(
+        public val report: com.yet.pets.core.PetsKmpReport,
+    ) : PetLoadError {
+        override val message: String =
+            "package is not a valid Pets KMP package: ${report.errors.firstOrNull()?.message}"
+    }
+
+    /**
      * Final normalized filesystem/platform error boundary. Carries a diagnostic
      * message only — never a raw exception type.
      */

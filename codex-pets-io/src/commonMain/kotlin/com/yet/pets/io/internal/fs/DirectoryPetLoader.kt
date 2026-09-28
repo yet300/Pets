@@ -1,13 +1,17 @@
 package com.yet.pets.io.internal.fs
 
+import com.yet.pets.core.PetPackageParser
+import com.yet.pets.core.PetSpritesheetPathOutcome
+import com.yet.pets.core.PetsKmpPackageParser
+import com.yet.pets.core.PetsKmpSpritesheetPathOutcome
 import com.yet.pets.io.AbortWith
 import com.yet.pets.io.PetLoadError
 import com.yet.pets.io.PetLoadOutcome
 import com.yet.pets.io.PetPackageLimits
 import com.yet.pets.io.compatibilityFailureOf
 import com.yet.pets.io.finishLoad
-import com.yet.pets.core.PetSpritesheetPathOutcome
-import com.yet.pets.core.PetPackageParser
+import com.yet.pets.io.finishPetsKmpLoad
+import com.yet.pets.io.petsKmpFailureOf
 import okio.FileSystem
 import okio.Path
 
@@ -39,11 +43,72 @@ internal fun loadPetDirectory(
     PetLoadOutcome.Failure(PetLoadError.IoFailure("cannot load directory $root: ${e.message}"))
 }
 
+/**
+ * Pets KMP generic v1 directory entry point. Shares the identical secure
+ * directory implementation (manifest discovery, canonical containment,
+ * symlink policy, bounded reads); only path extraction and final parsing
+ * differ. No second directory implementation exists.
+ */
+internal fun loadPetsKmpDirectoryFromFs(
+    fileSystem: FileSystem,
+    root: Path,
+    limits: PetPackageLimits,
+): PetLoadOutcome = try {
+    loadPetsKmpDirectoryOrThrow(fileSystem, root, limits)
+} catch (e: AbortWith) {
+    PetLoadOutcome.Failure(e.error)
+} catch (e: Exception) {
+    PetLoadOutcome.Failure(PetLoadError.IoFailure("cannot load directory $root: ${e.message}"))
+}
+
 private fun loadPetDirectoryOrThrow(
     fileSystem: FileSystem,
     root: Path,
     limits: PetPackageLimits,
 ): PetLoadOutcome {
+    val shared = readSharedDirectoryPackage(fileSystem, root, limits)
+    val relPath = when (val pathOutcome = PetPackageParser.spritesheetPathOf(shared.manifestBytes)) {
+        is PetSpritesheetPathOutcome.Success -> pathOutcome.path
+        is PetSpritesheetPathOutcome.Failure ->
+            return PetLoadOutcome.Failure(compatibilityFailureOf(pathOutcome.error))
+    }
+    checkManifestRelativePath(relPath)
+    val sheetBytes = readSharedDirectoryAsset(fileSystem, shared, relPath, limits)
+    return finishLoad(shared.manifestBytes, shared.fallbackId, sheetBytes)
+}
+
+private fun loadPetsKmpDirectoryOrThrow(
+    fileSystem: FileSystem,
+    root: Path,
+    limits: PetPackageLimits,
+): PetLoadOutcome {
+    val shared = readSharedDirectoryPackage(fileSystem, root, limits)
+    val relPath = when (val pathOutcome = PetsKmpPackageParser.spritesheetPathOf(shared.manifestBytes)) {
+        is PetsKmpSpritesheetPathOutcome.Success -> pathOutcome.path
+        is PetsKmpSpritesheetPathOutcome.Failure ->
+            return PetLoadOutcome.Failure(petsKmpFailureOf(pathOutcome.error))
+    }
+    checkManifestRelativePath(relPath)
+    val sheetBytes = readSharedDirectoryAsset(fileSystem, shared, relPath, limits)
+    return finishPetsKmpLoad(shared.manifestBytes, shared.fallbackId, sheetBytes)
+}
+
+/**
+ * Shared secure directory package reader: limits check, canonical root,
+ * deterministic manifest discovery, and bounded manifest read. Single
+ * canonical implementation for both Codex V1 and Pets KMP generic packages.
+ */
+internal class SharedDirectoryPackage(
+    val manifestBytes: ByteArray,
+    val fallbackId: String,
+    val canonicalRoot: Path,
+)
+
+internal fun readSharedDirectoryPackage(
+    fileSystem: FileSystem,
+    root: Path,
+    limits: PetPackageLimits,
+): SharedDirectoryPackage {
     limits.invalidReason()?.let { throw AbortWith(it) }
     val canonicalRoot = try {
         fileSystem.canonicalize(root)
@@ -67,21 +132,23 @@ private fun loadPetDirectoryOrThrow(
         "manifestBytes",
         onMissing = { PetLoadError.MissingManifest(canonicalRoot.toString()) },
     )
-    val relPath = when (val pathOutcome = PetPackageParser.spritesheetPathOf(manifestBytes)) {
-        is PetSpritesheetPathOutcome.Success -> pathOutcome.path
-        is PetSpritesheetPathOutcome.Failure ->
-            return PetLoadOutcome.Failure(compatibilityFailureOf(pathOutcome.error))
-    }
-    checkManifestRelativePath(relPath)
-    val sheetPath = resolveContainedChild(fileSystem, canonicalRoot, relPath)
-    val sheetBytes = readBoundedFile(
+    return SharedDirectoryPackage(manifestBytes, canonicalRoot.name, canonicalRoot)
+}
+
+internal fun readSharedDirectoryAsset(
+    fileSystem: FileSystem,
+    shared: SharedDirectoryPackage,
+    relPath: String,
+    limits: PetPackageLimits,
+): ByteArray {
+    val sheetPath = resolveContainedChild(fileSystem, shared.canonicalRoot, relPath)
+    return readBoundedFile(
         fileSystem,
         sheetPath,
         limits.maxSpritesheetBytes,
         "spritesheetBytes",
         onMissing = { path -> PetLoadError.MissingSpritesheet(path.toString()) },
     )
-    return finishLoad(manifestBytes, canonicalRoot.name, sheetBytes)
 }
 
 internal sealed interface ManifestLocation {

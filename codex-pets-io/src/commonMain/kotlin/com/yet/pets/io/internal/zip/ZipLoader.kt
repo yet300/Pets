@@ -1,20 +1,29 @@
 package com.yet.pets.io.internal.zip
 
+import com.yet.pets.core.PetPackageParser
+import com.yet.pets.core.PetSpritesheetPathOutcome
+import com.yet.pets.core.PetsKmpPackageParser
+import com.yet.pets.core.PetsKmpSpritesheetPathOutcome
 import com.yet.pets.io.AbortWith
 import com.yet.pets.io.PetLoadError
 import com.yet.pets.io.PetLoadOutcome
 import com.yet.pets.io.PetPackageLimits
 import com.yet.pets.io.compatibilityFailureOf
 import com.yet.pets.io.finishLoad
+import com.yet.pets.io.finishPetsKmpLoad
 import com.yet.pets.io.internal.fs.checkManifestRelativePath
-import com.yet.pets.core.PetPackageParser
-import com.yet.pets.core.PetSpritesheetPathOutcome
+import com.yet.pets.io.petsKmpFailureOf
 
 /**
  * ZIP package loading over the structural parser. Collision detection runs
  * over ALL entries (files AND directories) BEFORE directories are discarded:
  * no two entries may normalize — exactly or case-folded — to one path,
  * regardless of kind. No first-wins / last-wins semantics anywhere.
+ *
+ * Codex V1 entry point. For generic packages use [loadPetsKmpZipBytes], which
+ * shares the identical secure archive implementation (traversal protection,
+ * CRC checks, DEFLATE consumption, overlap checks, limits, duplicates);
+ * only manifest interpretation differs.
  */
 internal fun loadZipBytes(
     bytes: ByteArray,
@@ -28,11 +37,83 @@ internal fun loadZipBytes(
     PetLoadOutcome.Failure(PetLoadError.InvalidArchive("cannot read archive: ${e.message}"))
 }
 
+/**
+ * Pets KMP generic v1 ZIP entry point. Shares the identical secure archive
+ * implementation with [loadZipBytes]; only path extraction and final parsing
+ * differ. No second ZIP implementation exists.
+ */
+internal fun loadPetsKmpZipBytes(
+    bytes: ByteArray,
+    fallbackId: String,
+    limits: PetPackageLimits,
+): PetLoadOutcome = try {
+    loadPetsKmpZipOrThrow(bytes, fallbackId, limits)
+} catch (e: AbortWith) {
+    PetLoadOutcome.Failure(e.error)
+} catch (e: Exception) {
+    PetLoadOutcome.Failure(PetLoadError.InvalidArchive("cannot read archive: ${e.message}"))
+}
+
 private fun loadZipOrThrow(
     bytes: ByteArray,
     fallbackId: String,
     limits: PetPackageLimits,
 ): PetLoadOutcome {
+    val pkg = readSharedZipPackage(bytes, fallbackId, limits)
+    val manifestBytes = readZipEntryData(
+        bytes,
+        pkg.manifestEntry,
+        minOf(limits.maxManifestBytes, limits.maxEntryUncompressedBytes),
+        "manifestBytes",
+    )
+    val relPath = when (val pathOutcome = PetPackageParser.spritesheetPathOf(manifestBytes)) {
+        is PetSpritesheetPathOutcome.Success -> pathOutcome.path
+        is PetSpritesheetPathOutcome.Failure ->
+            return PetLoadOutcome.Failure(compatibilityFailureOf(pathOutcome.error))
+    }
+    checkManifestRelativePath(relPath)
+    val sheetBytes = readSharedZipAsset(bytes, pkg, relPath, pkg.byPath, limits)
+    return finishLoad(manifestBytes, pkg.resolved.fallbackId, sheetBytes)
+}
+
+private fun loadPetsKmpZipOrThrow(
+    bytes: ByteArray,
+    fallbackId: String,
+    limits: PetPackageLimits,
+): PetLoadOutcome {
+    val pkg = readSharedZipPackage(bytes, fallbackId, limits)
+    val manifestBytes = readZipEntryData(
+        bytes,
+        pkg.manifestEntry,
+        minOf(limits.maxManifestBytes, limits.maxEntryUncompressedBytes),
+        "manifestBytes",
+    )
+    val relPath = when (val pathOutcome = PetsKmpPackageParser.spritesheetPathOf(manifestBytes)) {
+        is PetsKmpSpritesheetPathOutcome.Success -> pathOutcome.path
+        is PetsKmpSpritesheetPathOutcome.Failure ->
+            return PetLoadOutcome.Failure(petsKmpFailureOf(pathOutcome.error))
+    }
+    checkManifestRelativePath(relPath)
+    val sheetBytes = readSharedZipAsset(bytes, pkg, relPath, pkg.byPath, limits)
+    return finishPetsKmpLoad(manifestBytes, pkg.resolved.fallbackId, sheetBytes)
+}
+
+/**
+ * Shared secure ZIP package resolution: raw cap, structural parse, collision
+ * and symlink/encryption checks, and package-shape resolution. Single
+ * canonical implementation for both Codex V1 and Pets KMP generic packages.
+ */
+internal class SharedZipPackage(
+    val resolved: ResolvedZipPackage,
+    val manifestEntry: ZipEntry,
+    val byPath: Map<String, ZipEntry>,
+)
+
+internal fun readSharedZipPackage(
+    bytes: ByteArray,
+    fallbackId: String,
+    limits: PetPackageLimits,
+): SharedZipPackage {
     limits.invalidReason()?.let { throw AbortWith(it) }
     // Raw cap BEFORE indexing: over-limit blobs fail without central-directory work.
     if (bytes.size.toLong() > limits.maxCompressedArchiveBytes) {
@@ -70,31 +151,27 @@ private fun loadZipOrThrow(
     for (entry in files) {
         byPath[entry.normalizedPath] = entry
     }
-    val pkg = resolveZipPackage(byPath, fallbackId)
+    val resolved = resolveZipPackage(byPath, fallbackId)
+    return SharedZipPackage(resolved, resolved.manifestEntry, byPath)
+}
 
-    val manifestBytes = readZipEntryData(
-        bytes,
-        pkg.manifestEntry,
-        minOf(limits.maxManifestBytes, limits.maxEntryUncompressedBytes),
-        "manifestBytes",
-    )
-    val relPath = when (val pathOutcome = PetPackageParser.spritesheetPathOf(manifestBytes)) {
-        is PetSpritesheetPathOutcome.Success -> pathOutcome.path
-        is PetSpritesheetPathOutcome.Failure ->
-            return PetLoadOutcome.Failure(compatibilityFailureOf(pathOutcome.error))
-    }
-    checkManifestRelativePath(relPath)
-    val assetPath = joinPackagePath(pkg.prefix, relPath)
+internal fun readSharedZipAsset(
+    bytes: ByteArray,
+    pkg: SharedZipPackage,
+    relPath: String,
+    byPath: Map<String, ZipEntry>,
+    limits: PetPackageLimits,
+): ByteArray {
+    val assetPath = joinPackagePath(pkg.resolved.prefix, relPath)
     val assetEntry = byPath[assetPath]
         ?: throw AbortWith(PetLoadError.MissingSpritesheet(assetPath))
     if (assetEntry.isDirectory) {
         throw AbortWith(PetLoadError.MissingSpritesheet(assetPath))
     }
-    val sheetBytes = readZipEntryData(
+    return readZipEntryData(
         bytes,
         assetEntry,
         minOf(limits.maxSpritesheetBytes, limits.maxEntryUncompressedBytes),
         "spritesheetBytes",
     )
-    return finishLoad(manifestBytes, pkg.fallbackId, sheetBytes)
 }
