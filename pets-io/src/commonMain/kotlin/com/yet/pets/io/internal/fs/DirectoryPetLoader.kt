@@ -1,5 +1,7 @@
 package com.yet.pets.io.internal.fs
 
+import com.yet.pets.core.CodexV2PetPackageParser
+import com.yet.pets.core.CodexV2SpritesheetPathOutcome
 import com.yet.pets.core.PetPackageParser
 import com.yet.pets.core.PetSpritesheetPathOutcome
 import com.yet.pets.core.PetsKmpPackageParser
@@ -8,7 +10,9 @@ import com.yet.pets.io.AbortWith
 import com.yet.pets.io.PetLoadError
 import com.yet.pets.io.PetLoadOutcome
 import com.yet.pets.io.PetPackageLimits
+import com.yet.pets.io.codexV2FailureOf
 import com.yet.pets.io.compatibilityFailureOf
+import com.yet.pets.io.finishCodexV2Load
 import com.yet.pets.io.finishLoad
 import com.yet.pets.io.finishPetsKmpLoad
 import com.yet.pets.io.petsKmpFailureOf
@@ -273,4 +277,27 @@ internal fun readBoundedFile(
         // A missing file here means it vanished between discovery and read.
         throw AbortWith(onMissing(path))
     }
+}
+
+/** Explicit V2 adapter over the existing secure directory readers. */
+internal fun loadCodexV2DirectoryFromFs(
+    fileSystem: FileSystem,
+    root: Path,
+    limits: PetPackageLimits,
+): PetLoadOutcome = try {
+    val shared = readSharedDirectoryPackage(fileSystem, root, limits, allowLegacyAvatar = false)
+    val relPath = when (
+        val pathOutcome = CodexV2PetPackageParser.spritesheetPathOf(shared.manifestBytes)
+    ) {
+        is CodexV2SpritesheetPathOutcome.Success -> pathOutcome.path
+        is CodexV2SpritesheetPathOutcome.Failure ->
+            throw AbortWith(codexV2FailureOf(pathOutcome.error))
+    }
+    checkManifestRelativePath(relPath)
+    val sheetBytes = readSharedDirectoryAsset(fileSystem, shared, relPath, limits)
+    finishCodexV2Load(shared.manifestBytes, shared.fallbackId, sheetBytes)
+} catch (e: AbortWith) {
+    PetLoadOutcome.Failure(e.error)
+} catch (e: Exception) {
+    PetLoadOutcome.Failure(PetLoadError.IoFailure("cannot load directory $root: ${e.message}"))
 }

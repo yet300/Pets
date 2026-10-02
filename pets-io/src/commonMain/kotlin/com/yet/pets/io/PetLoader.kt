@@ -1,15 +1,19 @@
 package com.yet.pets.io
 
+import com.yet.pets.core.CodexV2Error
+import com.yet.pets.core.CodexV2ParseOutcome
+import com.yet.pets.core.CodexV2PetPackageParser
+import com.yet.pets.core.CodexV2Report
+import com.yet.pets.core.EncodedSpritesheetProbe
 import com.yet.pets.core.PetPackageParser
 import com.yet.pets.core.PetParseOutcome
-import com.yet.pets.core.PetsKmpParseOutcome
 import com.yet.pets.core.PetsKmpPackageParser
-import com.yet.pets.core.EncodedSpritesheetProbe
+import com.yet.pets.core.PetsKmpParseOutcome
 import com.yet.pets.core.SpritesheetInfo
 import com.yet.pets.io.internal.fs.loadPetDirectory as loadPetDirectoryFromFs
 import com.yet.pets.io.internal.fs.platformFileSystem
-import com.yet.pets.io.internal.zip.loadZipBytes
 import com.yet.pets.io.internal.zip.loadPetsKmpZipBytes
+import com.yet.pets.io.internal.zip.loadZipBytes
 import okio.Path.Companion.toPath
 
 /**
@@ -18,8 +22,9 @@ import okio.Path.Companion.toPath
  * normalizer and compatibility authority: io establishes facts (bytes, paths,
  * limits, image facts) and core judges them.
  *
- * Two explicit formats, no sniffing:
+ * Three explicit formats, no sniffing:
  * - Codex V1: [loadPetDirectory]/[loadPetZip] via [PetPackageParser].
+ * - Codex V2: [loadCodexV2Directory]/[loadCodexV2Zip].
  * - Pets KMP generic v1: [loadPetsKmpDirectory]/[loadPetsKmpZip] via
  *   [PetsKmpPackageParser].
  *
@@ -28,6 +33,38 @@ import okio.Path.Companion.toPath
  * the only filesystem implementation, used internally.
  */
 public object PetLoader {
+    /**
+     * Loads an explicit Codex V2 directory package. Discovery requires `pet.json`;
+     * identity falls back to the canonical directory basename. No format sniffing.
+     */
+    public fun loadCodexV2Directory(
+        path: String,
+        limits: PetPackageLimits = PetPackageLimits.Default,
+    ): PetLoadOutcome = try {
+        com.yet.pets.io.internal.fs.loadCodexV2DirectoryFromFs(platformFileSystem(), path.toPath(), limits)
+    } catch (e: AbortWith) {
+        PetLoadOutcome.Failure(e.error)
+    } catch (e: Exception) {
+        PetLoadOutcome.Failure(PetLoadError.IoFailure("cannot load directory $path: ${e.message}"))
+    }
+
+    /**
+     * Loads an explicit Codex V2 ZIP package requiring `pet.json`. Root archives
+     * use [fallbackId]; nested archives use the top-level directory name.
+     * Uses the shared secure ZIP reader and never sniffs formats.
+     */
+    public fun loadCodexV2Zip(
+        bytes: ByteArray,
+        fallbackId: String = "pet",
+        limits: PetPackageLimits = PetPackageLimits.Default,
+    ): PetLoadOutcome = try {
+        com.yet.pets.io.internal.zip.loadCodexV2ZipBytes(bytes, fallbackId, limits)
+    } catch (e: AbortWith) {
+        PetLoadOutcome.Failure(e.error)
+    } catch (e: Exception) {
+        PetLoadOutcome.Failure(PetLoadError.InvalidArchive("cannot read archive: ${e.message}"))
+    }
+
     /**
      * Loads a directory package. The manifest is `pet.json`, with legacy
      * `avatar.json` as fallback only when `pet.json` is absent (`pet.json`
@@ -156,3 +193,19 @@ internal fun compatibilityFailureOf(error: com.yet.pets.core.PetCompatibilityErr
 
 internal fun petsKmpFailureOf(error: com.yet.pets.core.PetsKmpError): PetLoadError =
     PetLoadError.PetsKmpCompatibilityFailure(com.yet.pets.core.PetsKmpReport(listOf(error)))
+
+/** Raw parsing preserves V2 image validation, including its static PNG/APNG guard. */
+internal fun finishCodexV2Load(
+    manifestBytes: ByteArray,
+    fallbackId: String,
+    sheetBytes: ByteArray,
+): PetLoadOutcome = when (
+    val parsed = CodexV2PetPackageParser.parse(manifestBytes, sheetBytes, fallbackId)
+) {
+    is CodexV2ParseOutcome.Success -> PetLoadOutcome.Success(parsed.definition, sheetBytes)
+    is CodexV2ParseOutcome.Failure ->
+        PetLoadOutcome.Failure(PetLoadError.CodexV2CompatibilityFailure(parsed.report))
+}
+
+internal fun codexV2FailureOf(error: CodexV2Error): PetLoadError =
+    PetLoadError.CodexV2CompatibilityFailure(CodexV2Report(listOf(error)))

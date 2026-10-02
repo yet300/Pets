@@ -96,6 +96,14 @@ public sealed interface PetLoadError {
             "package is not a valid Pets KMP package: ${report.errors.firstOrNull()?.message}"
     }
 
+    /** Codex V2 semantic validation rejected the package; carries its full report. */
+    public data class CodexV2CompatibilityFailure(
+        public val report: com.yet.pets.core.CodexV2Report,
+    ) : PetLoadError {
+        override val message: String =
+            "package is not Codex V2-compatible: ${report.errors.firstOrNull()?.message}"
+    }
+
     /**
      * Final normalized filesystem/platform error boundary. Carries a diagnostic
      * message only — never a raw exception type.

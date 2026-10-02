@@ -1,5 +1,7 @@
 package com.yet.pets.io.internal.zip
 
+import com.yet.pets.core.CodexV2PetPackageParser
+import com.yet.pets.core.CodexV2SpritesheetPathOutcome
 import com.yet.pets.core.PetPackageParser
 import com.yet.pets.core.PetSpritesheetPathOutcome
 import com.yet.pets.core.PetsKmpPackageParser
@@ -8,7 +10,9 @@ import com.yet.pets.io.AbortWith
 import com.yet.pets.io.PetLoadError
 import com.yet.pets.io.PetLoadOutcome
 import com.yet.pets.io.PetPackageLimits
+import com.yet.pets.io.codexV2FailureOf
 import com.yet.pets.io.compatibilityFailureOf
+import com.yet.pets.io.finishCodexV2Load
 import com.yet.pets.io.finishLoad
 import com.yet.pets.io.finishPetsKmpLoad
 import com.yet.pets.io.internal.fs.checkManifestRelativePath
@@ -181,4 +185,33 @@ internal fun readSharedZipAsset(
         minOf(limits.maxSpritesheetBytes, limits.maxEntryUncompressedBytes),
         "spritesheetBytes",
     )
+}
+
+/** Explicit V2 adapter over the existing secure ZIP readers. */
+internal fun loadCodexV2ZipBytes(
+    bytes: ByteArray,
+    fallbackId: String,
+    limits: PetPackageLimits,
+): PetLoadOutcome = try {
+    val pkg = readSharedZipPackage(bytes, fallbackId, limits, allowLegacyAvatar = false)
+    val manifestBytes = readZipEntryData(
+        bytes,
+        pkg.manifestEntry,
+        minOf(limits.maxManifestBytes, limits.maxEntryUncompressedBytes),
+        "manifestBytes",
+    )
+    val relPath = when (
+        val pathOutcome = CodexV2PetPackageParser.spritesheetPathOf(manifestBytes)
+    ) {
+        is CodexV2SpritesheetPathOutcome.Success -> pathOutcome.path
+        is CodexV2SpritesheetPathOutcome.Failure ->
+            throw AbortWith(codexV2FailureOf(pathOutcome.error))
+    }
+    checkManifestRelativePath(relPath)
+    val sheetBytes = readSharedZipAsset(bytes, pkg, relPath, pkg.byPath, limits)
+    finishCodexV2Load(manifestBytes, pkg.resolved.fallbackId, sheetBytes)
+} catch (e: AbortWith) {
+    PetLoadOutcome.Failure(e.error)
+} catch (e: Exception) {
+    PetLoadOutcome.Failure(PetLoadError.InvalidArchive("cannot read archive: ${e.message}"))
 }
