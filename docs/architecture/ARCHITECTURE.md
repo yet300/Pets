@@ -1,5 +1,18 @@
 # Architecture
 
+> **2026-10-02 V2 amendment (current implementation).** Explicit V2 support
+> now lives in `CodexV2PetPackageParser`/`CodexV2` and
+> `PetLoader.loadCodexV2Directory`/`loadCodexV2Zip`. V1 acceptance and the
+> generic v1 schema remain unchanged. The first-party Work Pets 0.1.6 artwork
+> contract establishes 1536x2288, 8x11, 192x208 cells and sixteen clockwise
+> look poses. Standard timings and the optional pure selector follow the
+> separately observed Desktop runtime. Fixed geometry, literal integer version
+> 2, static PNG/WebP only, 64 KiB/8 MiB caps, ignored unknown members and rejected
+> `frame`/`animations` (including null) are explicit library policies.
+> Validation checks image metadata, not pixels/alpha or official Desktop
+> equivalence. See [design](../spec/CODEX_V2_SUPPORT_DESIGN.md) and
+> [implementation evidence](../audit/CODEX_V2_SUPPORT_IMPLEMENTATION.md).
+
 `pets-kmp` is a generic cross-platform animated pet
 runtime with Codex Pets V1 compatibility (not the runtime itself hard-coded
 around Codex).
@@ -9,7 +22,7 @@ Three different concepts (never blurred):
 1. Pets KMP Package Format v1 — project-owned, stable candidate
    (`docs/spec/PETS_KMP_PACKAGE_V1.md`).
 2. Codex V1 compatibility — verified against OpenAI public TUI.
-3. Codex Desktop V2 — research only / unsupported
+3. Codex V2 — explicit library profile (2026-10-02 amendment above)
    (`docs/research/CODEX_V2_COMPATIBILITY_RESEARCH.md`).
 
 Conceptual layout after generic extraction:

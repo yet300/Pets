@@ -1,5 +1,18 @@
 # Public API Contract (updated after Phase 3 remediation)
 
+> **2026-10-02 V2 amendment (current implementation).** Explicit V2 support
+> now lives in `CodexV2PetPackageParser`/`CodexV2` and
+> `PetLoader.loadCodexV2Directory`/`loadCodexV2Zip`. V1 acceptance and the
+> generic v1 schema remain unchanged. The first-party Work Pets 0.1.6 artwork
+> contract establishes 1536x2288, 8x11, 192x208 cells and sixteen clockwise
+> look poses. Standard timings and the optional pure selector follow the
+> separately observed Desktop runtime. Fixed geometry, literal integer version
+> 2, static PNG/WebP only, 64 KiB/8 MiB caps, ignored unknown members and rejected
+> `frame`/`animations` (including null) are explicit library policies.
+> Validation checks image metadata, not pixels/alpha or official Desktop
+> equivalence. See [design](../spec/CODEX_V2_SUPPORT_DESIGN.md) and
+> [implementation evidence](../audit/CODEX_V2_SUPPORT_IMPLEMENTATION.md).
+
 Current module split: `core` (pure) · `io` (Okio, optional) ·
 `compose` (renderer) · `host` (cross-platform pet host, Phase 4) ·
 `apple` (one Swift framework facade). Package root `com.yet.pets.*`.
@@ -31,7 +44,7 @@ layer frameworks are build artifacts, not a supported combined distribution.
 | Layer | Types | Notes |
 |---|---|---|
 | Raw serialized manifest | `CodexPetManifest`, `FrameSpec`, `AnimationSpec` (`@Serializable`, unknown-field tolerant) | mirrors CLI `PetFile` 1:1, incl. `loop` rename |
-| Normalized runtime | `PetDefinition`, `PetAnimation`, `PetFrame`, `PetAnimationKey`, `AtlasGeometry` | CLI V1 profile only; no V2 types in v1 |
+| Normalized runtime | `PetDefinition`, `PetAnimation`, `PetFrame`, `PetAnimationKey`, `AtlasGeometry` | format-independent normalized runtime; V1 and V2 adapters |
 | Loading | `PetLoader.loadPetDirectory/loadPetZip` | `io` module; public boundary is `String`/`ByteArray` (Okio internal only) |
 | Runtime compatibility validation | `CodexCompatibilityValidator` → `PetCompatibilityReport` | pure core, reproduces machine-enforced CLI rules; used by loaders |
 | Authoring QA validation | `CodexAuthoringValidator` → `PetAuthoringReport` | hatch-pet QA recommendations; advisory only, never gates loading |

@@ -1,6 +1,6 @@
 # Pets KMP
 
-A generic cross-platform animated pet runtime with Codex Pets V1
+A generic cross-platform animated pet runtime with explicit Codex Pets V1 and V2
 compatibility. Pre-release (`0.1.0` is not published).
 
 Three different concepts (never blurred):
@@ -9,13 +9,14 @@ Three different concepts (never blurred):
    (`docs/spec/PETS_KMP_PACKAGE_V1.md`).
 2. Codex V1 compatibility — verified against OpenAI public TUI
    (`CodexPetPackageParser`, fixed 1536x1872 geometry, built-in table).
-3. Codex Desktop V2 — research only / unsupported
-   (`docs/research/CODEX_V2_COMPATIBILITY_RESEARCH.md`).
+3. Codex V2 library profile — explicit parser/loader for the first-party
+   Work Pets artwork layout; library validation policy, with observed runtime
+   behavior documented separately (`docs/spec/CODEX_V2_SUPPORT_DESIGN.md`).
 
-The original `assets/kodee/pet.json` (`spriteVersionNumber=2`, 1536x2288) is
-NOT accepted by the Codex V1 adapter by design, while a SEPARATE generic
-manifest (`assets/kodee/pet.pets-kmp.json`) describes the same spritesheet as
-a generic pet.
+The original `assets/kodee/pet.json` (`spriteVersionNumber=2`, 1536x2288)
+is accepted by `CodexV2PetPackageParser`. It remains rejected by the Codex V1
+adapter. The separate generic manifest `assets/kodee/pet.pets-kmp.json`
+describes the same sheet using the project-owned schema.
 
 ## Modules
 
@@ -23,11 +24,12 @@ a generic pet.
   `PetAnimationKey`, `PetAnimation`, `PetFrame`, `AtlasGeometry`, playback,
   generic package schema/validation) plus the Codex V1 compatibility adapter
   (manifest interpretation, fixed geometry, built-in table, aliases,
-  fallback/loop quirks). It has no filesystem, decoder, UI, or network
+  fallback/loop quirks), and the explicit V2 profile (fixed 8x11 geometry and
+  sixteen held look poses). It has no filesystem, decoder, UI, or network
   dependency.
 - `:pets-io` optionally loads directory and ZIP packages with path,
-  archive, and resource checks (shared secure implementation for both Codex
-  V1 and generic packages). It delegates image metadata inspection to core.
+  archive, and resource checks (shared secure implementation for Codex
+  V1, V2, and generic packages). It delegates image metadata inspection to core.
 - `:pets-compose` decodes one atlas in a lifecycle-owned background job
   and draws frame subregions via the generic `Pet` renderer (`CodexPet`
   remains as a thin wrapper). It depends on core, not IO, and never inspects
@@ -61,6 +63,41 @@ when (parsed) {
     is PetParseOutcome.Failure -> showErrors(parsed.report.errors)
 }
 ```
+
+Codex V2 (explicit entry point):
+
+```kotlin
+when (val parsed = CodexV2PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId = "kodee")) {
+    is CodexV2ParseOutcome.Success -> {
+        val state = rememberPetPlayerState(parsed.definition, spritesheetBytes)
+        Pet(state)
+        // Caller supplies screen offsets; null means no look override.
+        CodexV2.lookAnimationKeyForOffset(dx, dy)?.let { state.play(it) }
+    }
+    is CodexV2ParseOutcome.Failure -> showErrors(parsed.report.errors)
+}
+```
+
+V2 requires the literal JSON integer `spriteVersionNumber: 2` and exactly
+1536x2288 pixels: 8 columns, 11 rows, 192x208 cells. Standard animations use
+the observed runtime timings; indices 72–87 are held single-frame poses:
+`look-000`, `look-022.5`, `look-045`, `look-067.5`, `look-090`, `look-112.5`,
+`look-135`, `look-157.5`, `look-180`, `look-202.5`, `look-225`, `look-247.5`,
+`look-270`, `look-292.5`, `look-315`, `look-337.5`.
+The pure selector uses screen dx right/dy down, nearest clockwise 22.5-degree
+sector from up, clockwise ties, and no override for radius <=1 or non-finite
+input. Applications own point collection and restoring standard animation;
+the library installs no global cursor tracking.
+
+V2 accepts static PNG/WebP, rejects APNG/animated WebP, and retains the
+64 KiB manifest/8 MiB encoded image caps. It checks metadata and geometry,
+not decoded pixels, alpha, unused-cell transparency, or pose quality.
+Unknown members are ignored; `frame` and `animations` are rejected even
+when null. These are **library policies**, not an official Desktop-equivalent
+validator. The first-party Work Pets 0.1.6 artwork contract specifies geometry
+and clockwise pose order (and its own 20 MiB authoring cap); runtime timing
+and selection evidence come from the separately recorded Desktop research.
+See [implementation evidence](docs/audit/CODEX_V2_SUPPORT_IMPLEMENTATION.md).
 
 Generic Pets KMP v1:
 
@@ -99,8 +136,14 @@ when (val outcome = PetLoader.loadPetZip(zipBytes, fallbackId = "bella")) {
 }
 ```
 
-Generic: `PetLoader.loadPetsKmpZip` / `loadPetsKmpDirectory`. Codex and
-generic loaders are explicitly distinct; no format sniffing.
+Codex V1: `PetLoader.loadPetZip` / `loadPetDirectory`.
+Codex V2: `PetLoader.loadCodexV2Zip(bytes, fallbackId, limits)` /
+`loadCodexV2Directory(path, limits)`; requires `pet.json`. V2 semantic failures
+retain `PetLoadError.CodexV2CompatibilityFailure.report`.
+Generic: `PetLoader.loadPetsKmpZip` / `loadPetsKmpDirectory`.
+All three loaders are explicit; no format sniffing or failure-driven fallback.
+V2 reuses the bounded path/ZIP security implementation. Unknown downloaded
+`.codex-pet` containers have not been verified by this implementation.
 
 `PetLoadOutcome.Success` hands its bounded encoded `ByteArray` to the caller.
 Keep it unchanged while Compose snapshots it in the background. A new array

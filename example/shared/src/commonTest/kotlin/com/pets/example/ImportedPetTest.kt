@@ -8,6 +8,10 @@ import kotlin.test.*
 
 @OptIn(ExperimentalResourceApi::class)
 class ImportedPetTest {
+    private val lookKeys = listOf(
+        "000", "022.5", "045", "067.5", "090", "112.5", "135", "157.5",
+        "180", "202.5", "225", "247.5", "270", "292.5", "315", "337.5",
+    ).map { PetAnimationKey("look-$it") }
     private val manifest = ImportFixtures.codexManifest
     private val sheet = ImportFixtures.codexSheet
 
@@ -25,8 +29,14 @@ class ImportedPetTest {
 
     @Test fun exactKodeeManifestsUseDistinctRoutes() = runBlocking {
         val image = Res.readBytes("files/kodee/spritesheet.webp")
-        assertEquals(ManifestFormat.UnsupportedCodexV2, classifyPetManifest(ImportFixtures.originalKodeeManifest))
-        assertIs<ImportedPetResult.UnsupportedCodexV2>(parseImportedPet(ImportFixtures.originalKodeeManifest, image))
+        assertEquals(ManifestFormat.CodexV2, classifyPetManifest(ImportFixtures.originalKodeeManifest))
+        val v2 = assertIs<ImportedPetResult.Success>(parseImportedPet(ImportFixtures.originalKodeeManifest, image))
+        val direct = assertIs<CodexV2ParseOutcome.Success>(CodexV2PetPackageParser.parse(ImportFixtures.originalKodeeManifest, image))
+        assertEquals(direct.definition, v2.definition)
+        assertEquals(lookKeys, v2.definition.animationKeys.filter { it.value.startsWith("look-") })
+        for ((index, key) in lookKeys.withIndex()) {
+            assertEquals(listOf(72 + index), v2.definition.animation(key)!!.frames.map { it.spriteIndex })
+        }
         assertEquals(ManifestFormat.PetsKmpV1, classifyPetManifest(ImportFixtures.genericKodeeManifest))
         val result = assertIs<ImportedPetResult.Success>(parseImportedPet(ImportFixtures.genericKodeeManifest, image, "ignored"))
         assertEquals("kodee", result.definition.id)
@@ -38,7 +48,8 @@ class ImportedPetTest {
         }
         for (json in listOf("{\"schema\":\"other\"}", "[]", "null", "{\"alien\":true}",
             "{\"schema\":\"pets-kmp\",\"schemaVersion\":2}",
-            "{\"spriteVersionNumber\":3}", "{\"schema\":\"pets-kmp\",\"schemaVersion\":\"1\"}")) {
+            "{\"spriteVersionNumber\":3}", "{\"spriteVersionNumber\":\"2\"}",
+            "{\"spriteVersionNumber\":2.0}", "{\"spriteVersionNumber\":2e0}", "{\"schema\":\"pets-kmp\",\"schemaVersion\":\"1\"}")) {
             assertEquals(ManifestFormat.Unknown, classifyPetManifest(json.encodeToByteArray()))
             assertIs<ImportedPetResult.UnsupportedFormat>(parseImportedPet(json.encodeToByteArray(), sheet))
         }
@@ -46,8 +57,11 @@ class ImportedPetTest {
 
     @Test fun explicitV2WinsEvenWithGenericIdentityOrV1Dimensions() {
         val json = "{\"schema\":\"pets-kmp\",\"schemaVersion\":1,\"spriteVersionNumber\":2}".encodeToByteArray()
-        assertEquals(ManifestFormat.UnsupportedCodexV2, classifyPetManifest(json))
-        assertEquals("Codex V2 pets are not supported yet", parseImportedPet(json, sheet).userMessage)
+        assertEquals(ManifestFormat.CodexV2, classifyPetManifest(json))
+        val failure = assertIs<ImportedPetResult.InvalidSpritesheet>(parseImportedPet(json, sheet))
+        assertTrue(failure.codexV2Report!!.errors.any { it is CodexV2Error.GeometryMismatch })
+        assertNull(failure.petsKmpReport)
+        assertNull(failure.codexReport)
     }
 
     @Test fun parserReportsStayAvailableAndFailuresNeverAddPets() {
@@ -74,6 +88,31 @@ class ImportedPetTest {
         val state = PetGalleryState(ImportFixtures.genericKodeeManifest, mismatched)
         assertFalse(state.importPet(manifest, mismatched))
         assertEquals(1, state.pets.size)
+    }
+
+    @Test fun v2PolicyAndImageFailuresKeepReportsAndNeverAdd() = runBlocking {
+        val image = Res.readBytes("files/kodee/spritesheet.webp")
+        val state = PetGalleryState(ImportFixtures.genericKodeeManifest, image)
+        for (bad in listOf(byteArrayOf(1, 2, 3), sheet, ByteArray(PetInputLimits.MAX_SPRITESHEET_BYTES + 1))) {
+            val result = assertIs<ImportedPetResult.InvalidSpritesheet>(parseImportedPet(ImportFixtures.originalKodeeManifest, bad))
+            val direct = assertIs<CodexV2ParseOutcome.Failure>(CodexV2PetPackageParser.parse(ImportFixtures.originalKodeeManifest, bad))
+            assertEquals(direct.report, result.codexV2Report)
+            assertFalse(state.importPet(ImportFixtures.originalKodeeManifest, bad))
+            assertEquals(1, state.pets.size)
+            assertEquals("Invalid spritesheet", state.importError)
+        }
+        for (member in listOf("frame", "animations")) {
+            val bytes = "{\"spriteVersionNumber\":2,\"$member\":null}".encodeToByteArray()
+            val failure = assertIs<ImportedPetResult.ParseFailure>(parseImportedPet(bytes, image))
+            val direct = assertIs<CodexV2ParseOutcome.Failure>(CodexV2PetPackageParser.parse(bytes, image))
+            assertEquals(direct.report, failure.codexV2Report)
+            assertTrue(failure.codexV2Report!!.errors.any { it is CodexV2Error.UnsupportedOverride })
+            assertFalse(state.importPet(bytes, image))
+            assertEquals(1, state.pets.size)
+        }
+        val malformedMetadata = "{\"spriteVersionNumber\":2,\"id\":[]}".encodeToByteArray()
+        assertNotNull(assertIs<ImportedPetResult.InvalidManifest>(parseImportedPet(malformedMetadata, image)).codexV2Report)
+        Unit
     }
 
     @Test fun filenameFallbackIsDeterministicAndGenericIdentityIsManifestOwned() {

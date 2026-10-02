@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(org.jetbrains.compose.resources.ExperimentalResourceApi::class)
 class PetGalleryStateTest {
     private val manifest = """{"schema":"pets-kmp","schemaVersion":1,"id":"cat","displayName":"Cat","frame":{"width":1,"height":1},"defaultAnimation":"stand","animations":[{"key":"stand","loopStart":0,"frames":[{"index":0,"durationMs":100}]},{"key":"dance","loopStart":0,"frames":[{"index":0,"durationMs":100}]}]}""".encodeToByteArray()
     private val png = byteArrayOf(137.toByte(),80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,-60,-119,0,0,0,11,73,68,65,84,120,-100,99,0,1,0,0,5,0,1,-95,-11,100,64,0,0,0,0,73,69,78,68,-82,66,96,-126)
@@ -22,6 +23,21 @@ class PetGalleryStateTest {
         state.play(PetAnimationKey("hello"))
         assertEquals("hello", state.overlayAnimation.value)
         assertEquals(state.selectedPet, state.overlayPet)
+    }
+
+    @Test fun originalV2PreviewAndGalleryKeepDefinitionAndLookActions() = kotlinx.coroutines.runBlocking {
+        val image = pets_kmp.example.shared.generated.resources.Res.readBytes("files/kodee/spritesheet.webp")
+        val preview = kotlin.test.assertIs<ImportedPetResult.Success>(parseImportedPet(ImportFixtures.originalKodeeManifest, image))
+        val state = PetGalleryState(manifest, png)
+        assertTrue(state.importPet(ImportFixtures.originalKodeeManifest, image))
+        assertEquals(preview.definition, state.selectedPet.definition)
+        assertEquals(preview.definition.animationKeys, state.selectedPet.definition.animationKeys)
+        for (key in preview.definition.animationKeys.filter { it.value.startsWith("look-") }) {
+            state.play(key)
+            assertEquals(key, state.selectedAnimation)
+            assertEquals(key, state.overlayAnimation)
+            assertEquals(state.selectedPet, state.overlayPet)
+        }
     }
 
     @Test fun bundledPetAndAddPage() {

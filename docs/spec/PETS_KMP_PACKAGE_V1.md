@@ -1,8 +1,21 @@
 # Pets KMP Package Format v1
 
+> **2026-10-02 V2 amendment (current implementation).** Explicit V2 support
+> now lives in `CodexV2PetPackageParser`/`CodexV2` and
+> `PetLoader.loadCodexV2Directory`/`loadCodexV2Zip`. V1 acceptance and the
+> generic v1 schema remain unchanged. The first-party Work Pets 0.1.6 artwork
+> contract establishes 1536x2288, 8x11, 192x208 cells and sixteen clockwise
+> look poses. Standard timings and the optional pure selector follow the
+> separately observed Desktop runtime. Fixed geometry, literal integer version
+> 2, static PNG/WebP only, 64 KiB/8 MiB caps, ignored unknown members and rejected
+> `frame`/`animations` (including null) are explicit library policies.
+> Validation checks image metadata, not pixels/alpha or official Desktop
+> equivalence. See [design](../spec/CODEX_V2_SUPPORT_DESIGN.md) and
+> [implementation evidence](../audit/CODEX_V2_SUPPORT_IMPLEMENTATION.md).
+
 OUR specification for generic cross-platform animated pets. This is NOT a
 Codex format. Codex Pets V1 compatibility is a separate adapter; Codex
-Desktop V2 is research only and unsupported.
+V2 support is a separate explicit library profile (see amendment above).
 
 ## 1. Identity
 
@@ -224,7 +237,8 @@ manifest and tests describe.
 - Not a Codex format. Codex V1 compatibility lives in `CodexPetPackageParser`
   / `PetPackageParser` with fixed geometry, built-in table, aliases, and
   fallback/loop quirks.
-- Not Codex V2. `spriteVersionNumber=2` does not activate any profile. The
+- Not Codex V2. Within the generic parser, `spriteVersionNumber=2` does not
+  activate a profile; the example routes explicit V2 to its separate adapter. The
   original `assets/kodee/pet.json` still fails the strict Codex V1 loader by
   design. A SEPARATE generic manifest can describe the same spritesheet as a
   generic pet — that distinction is central.

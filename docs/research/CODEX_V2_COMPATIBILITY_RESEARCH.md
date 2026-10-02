@@ -1,5 +1,12 @@
 # Codex Pets V2 compatibility research
 
+> **Current status, 2026-10-02:** This is the historical 2026-09-28 research
+> record. The user subsequently approved explicit library V2 support following
+> first-party Work Pets 0.1.6 artwork-contract evidence. See
+> [approved design](../spec/CODEX_V2_SUPPORT_DESIGN.md) and
+> [implementation evidence](../audit/CODEX_V2_SUPPORT_IMPLEMENTATION.md).
+> Historical verdicts below describe the evidence and authorization then.
+
 Research date: 2026-09-28. Scope: first-party evidence for a **normative** V2 runtime contract for `codex-pets-kmp`. Confidence in the final verdict: **moderate**. This is research only; no runtime, example, or asset was changed.
 
 ## 1. Executive verdict

@@ -5,7 +5,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
 
 /** Format ownership only. All format validation belongs to the library parser. */
-enum class ManifestFormat { PetsKmpV1, CodexV1, UnsupportedCodexV2, Unknown }
+enum class ManifestFormat { PetsKmpV1, CodexV1, CodexV2, Unknown }
 
 private fun readManifest(bytes: ByteArray): JsonElement? {
     if (bytes.size > PetInputLimits.MAX_MANIFEST_BYTES) return null
@@ -26,7 +26,7 @@ private fun classifyManifest(root: JsonElement): ManifestFormat {
         val value = obj[name] as? JsonPrimitive ?: return false
         return !value.isString && value.content == expected
     }
-    if (number("spriteVersionNumber", "2")) return ManifestFormat.UnsupportedCodexV2
+    if (number("spriteVersionNumber", "2")) return ManifestFormat.CodexV2
     val schema = obj["schema"] as? JsonPrimitive
     if (schema?.isString == true && schema.content == "pets-kmp" && number("schemaVersion", "1")) {
         return ManifestFormat.PetsKmpV1
@@ -50,27 +50,27 @@ fun classifyPetManifest(manifestBytes: ByteArray): ManifestFormat =
 sealed interface ImportedPetResult {
     val userMessage: String? get() = null
     data class Success(val definition: PetDefinition) : ImportedPetResult
-    data object UnsupportedCodexV2 : ImportedPetResult {
-        override val userMessage = "Codex V2 pets are not supported yet"
-    }
     data object UnsupportedFormat : ImportedPetResult {
         override val userMessage = "Unsupported pet format"
     }
     data class InvalidManifest(
         val petsKmpReport: PetsKmpReport? = null,
         val codexReport: PetCompatibilityReport? = null,
+        val codexV2Report: CodexV2Report? = null,
     ) : ImportedPetResult {
         override val userMessage = "Invalid pet manifest"
     }
     data class InvalidSpritesheet(
         val petsKmpReport: PetsKmpReport? = null,
         val codexReport: PetCompatibilityReport? = null,
+        val codexV2Report: CodexV2Report? = null,
     ) : ImportedPetResult {
         override val userMessage = "Invalid spritesheet"
     }
     data class ParseFailure(
         val petsKmpReport: PetsKmpReport? = null,
         val codexReport: PetCompatibilityReport? = null,
+        val codexV2Report: CodexV2Report? = null,
     ) : ImportedPetResult {
         override val userMessage = "Invalid pet manifest"
     }
@@ -89,7 +89,18 @@ fun parseImportedPet(
 ): ImportedPetResult {
     val root = readManifest(manifestBytes) ?: return ImportedPetResult.InvalidManifest()
     return when (classifyManifest(root)) {
-        ManifestFormat.UnsupportedCodexV2 -> ImportedPetResult.UnsupportedCodexV2
+        ManifestFormat.CodexV2 -> when (val result = CodexV2PetPackageParser.parse(manifestBytes, spritesheetBytes, fallbackId)) {
+            is CodexV2ParseOutcome.Success -> ImportedPetResult.Success(result.definition)
+            is CodexV2ParseOutcome.Failure -> when {
+                result.report.errors.any { it is CodexV2Error.InvalidSpritesheetBytes ||
+                    it is CodexV2Error.UnsupportedSpritesheetFormat || it is CodexV2Error.GeometryMismatch } ||
+                    spritesheetBytes.size > PetInputLimits.MAX_SPRITESHEET_BYTES ->
+                    ImportedPetResult.InvalidSpritesheet(codexV2Report = result.report)
+                result.report.errors.any { it is CodexV2Error.MalformedManifest } ->
+                    ImportedPetResult.InvalidManifest(codexV2Report = result.report)
+                else -> ImportedPetResult.ParseFailure(codexV2Report = result.report)
+            }
+        }
         ManifestFormat.Unknown -> ImportedPetResult.UnsupportedFormat
         ManifestFormat.PetsKmpV1 -> when (val result = PetsKmpPackageParser.parse(manifestBytes, spritesheetBytes)) {
             is PetsKmpParseOutcome.Success -> ImportedPetResult.Success(result.definition)
