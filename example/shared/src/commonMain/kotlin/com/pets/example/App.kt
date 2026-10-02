@@ -21,8 +21,6 @@ import com.yet.pets.compose.Pet
 import com.yet.pets.compose.PetAtlasState
 import com.yet.pets.compose.rememberPetPlayerState
 import com.yet.pets.core.PetAnimationKey
-import com.yet.pets.core.PetsKmpPackageParser
-import com.yet.pets.core.PetsKmpParseOutcome
 import com.yet.pets.host.PetHost
 import com.yet.pets.host.PetHostMode
 import com.yet.pets.host.PetSystemOverlayAvailability
@@ -217,7 +215,7 @@ private fun ImportDialog(gallery: PetGalleryState, onClose: () -> Unit, onAdded:
     }
     val preview = remember(manifest, sheet) {
         if (manifest != null && sheet != null) {
-            PetsKmpPackageParser.parse(manifest!!.bytes, sheet!!.bytes) as? PetsKmpParseOutcome.Success
+            parseImportedPet(manifest!!.bytes, sheet!!.bytes, importedPetFallbackId(manifest!!.name))
         } else null
     }
     AlertDialog(
@@ -232,11 +230,11 @@ private fun ImportDialog(gallery: PetGalleryState, onClose: () -> Unit, onAdded:
                 OutlinedButton(onClick = { pick(PetFileType.Spritesheet) }, Modifier.fillMaxWidth()) {
                     Text(sheet?.name ?: "Choose spritesheet")
                 }
-                if (preview != null && sheet != null) {
+                if (preview is ImportedPetResult.Success && sheet != null) {
                     Spacer(Modifier.height(12.dp))
                     PetPage(ExamplePet(preview.definition, sheet!!.bytes), null, 120.dp, Modifier.height(180.dp))
                 } else if (manifest != null && sheet != null) {
-                    Text("Invalid pet package", color = MaterialTheme.colorScheme.error)
+                    Text(preview?.userMessage ?: "Invalid pet manifest", color = MaterialTheme.colorScheme.error)
                 }
                 if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error)
             }
@@ -244,10 +242,10 @@ private fun ImportDialog(gallery: PetGalleryState, onClose: () -> Unit, onAdded:
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (gallery.importPet(manifest!!.bytes, sheet!!.bytes)) onAdded()
+                    if (gallery.importPet(manifest!!.bytes, sheet!!.bytes, importedPetFallbackId(manifest!!.name))) onAdded()
                     else error = gallery.importError
                 },
-                enabled = preview != null,
+                enabled = preview is ImportedPetResult.Success,
             ) { Text("Add") }
         },
         dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } },

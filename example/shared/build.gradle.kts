@@ -49,6 +49,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(project(":pets-core"))
+            implementation(libs.kotlinx.serialization.json)
             implementation(project(":pets-compose"))
             implementation(project(":pets-host"))
             implementation(libs.compose.runtime)

@@ -44,16 +44,16 @@ class PetGalleryState(bundledManifest: ByteArray, bundledSpritesheet: ByteArray)
         if (selectedPet.definition.animation(key) != null) selectedAnimation = key
     }
 
-    fun importPet(manifest: ByteArray, spritesheet: ByteArray): Boolean {
-        return when (val outcome = PetsKmpPackageParser.parse(manifest, spritesheet)) {
-            is PetsKmpParseOutcome.Success -> {
+    fun importPet(manifest: ByteArray, spritesheet: ByteArray, fallbackId: String = "imported-pet"): Boolean {
+        return when (val outcome = parseImportedPet(manifest, spritesheet, fallbackId)) {
+            is ImportedPetResult.Success -> {
                 pets += ExamplePet(outcome.definition, spritesheet)
                 selectPage(pets.lastIndex)
                 importError = null
                 true
             }
-            is PetsKmpParseOutcome.Failure -> {
-                importError = "Invalid pet package"
+            else -> {
+                importError = outcome.userMessage
                 false
             }
         }
