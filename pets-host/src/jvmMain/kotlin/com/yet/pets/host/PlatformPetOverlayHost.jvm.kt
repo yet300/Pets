@@ -1,6 +1,7 @@
 package com.yet.pets.host
 
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -12,9 +13,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposePanel
+import androidx.compose.ui.awt.RenderSettings
+import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.yet.pets.compose.Pet
 import com.yet.pets.compose.rememberPetPlayerState
@@ -25,6 +28,7 @@ import java.awt.GraphicsEnvironment
 import java.awt.Point
 import java.awt.Rectangle
 import java.awt.Toolkit
+import java.awt.event.MouseEvent
 import javax.swing.JWindow
 import javax.swing.SwingUtilities
 
@@ -234,6 +238,7 @@ internal class JvmPetOverlayController(
  * window; application lifetime remains host-owned.
  */
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 internal actual fun PlatformPetOverlayHost(
     definition: PetDefinition,
     spritesheetBytes: ByteArray,
@@ -255,7 +260,6 @@ internal actual fun PlatformPetOverlayHost(
         definition.geometry.cellWidth.toFloat() / definition.geometry.cellHeight.toFloat()
     val petWidthDp = PetHostDefaultPetWidthDp
     val petHeightDp = if (cellAspect.isFinite() && cellAspect > 0f) petWidthDp / cellAspect else petWidthDp
-    val composeDensity = LocalDensity.current.density
     var resource by remember(state, definition, spritesheetBytes) { mutableStateOf<JvmOverlayResource?>(null) }
 
     DisposableEffect(state, definition, spritesheetBytes) {
@@ -264,14 +268,14 @@ internal actual fun PlatformPetOverlayHost(
         val overlay = onSwingEdt { RealJvmOverlayWindow() }
         val window = overlay.windowRef() ?: error("Graphical overlay window unavailable")
         val controller = JvmPetOverlayController(overlay)
-        // Compose desktop density is expressed in AWT logical units already.
-        // AWT setLocation/setSize also take logical units; dividing by the
-        // GraphicsConfiguration device transform double-scales on Retina.
-        controller.updateScale(composeDensity)
+        // AWT window size and location use logical screen points, matching dp.
+        // Compose's Retina density applies only inside the rendering surface.
         val petWidthPx = controller.dpToPx(petWidthDp).coerceAtLeast(1)
         val petHeightPx = controller.dpToPx(petHeightDp).coerceAtLeast(1)
         val panel = onSwingEdt {
-            ComposePanel().apply {
+            // A native GPU child surface is opaque even when the surrounding
+            // Swing components are not. Composite alpha through Swing instead.
+            ComposePanel(renderSettings = RenderSettings.SwingGraphics()).apply {
                 isOpaque = false
                 background = Color(0, 0, 0, 0)
                 setSize(petWidthPx, petHeightPx)
@@ -287,16 +291,29 @@ internal actual fun PlatformPetOverlayHost(
                 if (state.isVisible) {
                     Box(
                         modifier = Modifier.size(petWidthDp.dp, petHeightDp.dp)
-                            .pointerInput(Unit) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consume()
-                                    // Desktop drag moves the overlay window itself.
-                                    val dxDp = dragAmount.x / composeDensity
-                                    val dyDp = dragAmount.y / composeDensity
-                                    val nextX = state.xDp + dxDp
-                                    val nextY = state.yDp + dyDp
-                                    val (actualX, actualY) = controller.moveTo(nextX, nextY)
-                                    state.moveTo(actualX, actualY)
+                            .pointerInput(state, controller) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown()
+                                    val press = currentEvent.nativeEvent as? MouseEvent
+                                    if (press != null && currentEvent.buttons.isPrimaryPressed) {
+                                        val pointerStart = press.locationOnScreen
+                                        val windowStart = onSwingEdt { window.location }
+                                        down.consume()
+                                        do {
+                                            val event = awaitPointerEvent()
+                                            val mouse = event.nativeEvent as? MouseEvent
+                                            if (mouse != null && event.buttons.isPrimaryPressed) {
+                                                // The window moves underneath the pointer, so
+                                                // local deltas (including synthetic relayout
+                                                // moves) cannot be accumulated safely.
+                                                val nextX = windowStart.x.toFloat() + mouse.xOnScreen - pointerStart.x
+                                                val nextY = windowStart.y.toFloat() + mouse.yOnScreen - pointerStart.y
+                                                val (actualX, actualY) = controller.moveTo(nextX, nextY)
+                                                state.moveTo(actualX, actualY)
+                                            }
+                                            event.changes.forEach { it.consume() }
+                                        } while (event.changes.any { it.pressed })
+                                    }
                                 }
                             },
                     ) {
@@ -305,7 +322,7 @@ internal actual fun PlatformPetOverlayHost(
                 }
             }
             window.contentPane.add(panel)
-            window.setSize(petWidthPx, petHeightPx)
+            controller.configure(petWidthPx, petHeightPx)
         }
         resource = JvmOverlayResource(controller, overlay, panel, ownerToken)
 
@@ -322,7 +339,6 @@ internal actual fun PlatformPetOverlayHost(
     SideEffect {
         val current = resource ?: return@SideEffect
         val window = current.overlay.windowRef() ?: return@SideEffect
-        current.controller.updateScale(composeDensity)
         if (desiredVisible) {
             val (actualX, actualY) = if (current.overlay.isShowing)
                 current.controller.moveTo(desiredX, desiredY)

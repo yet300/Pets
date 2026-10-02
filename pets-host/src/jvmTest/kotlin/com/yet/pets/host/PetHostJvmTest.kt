@@ -1,9 +1,12 @@
 package com.yet.pets.host
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.Density
 import com.yet.pets.compose.CodexPet
 import com.yet.pets.compose.PetAtlasState
 import com.yet.pets.compose.PetPlayerState
@@ -19,6 +22,11 @@ import java.awt.image.BufferedImage
 import java.awt.GraphicsEnvironment
 import java.awt.Window
 import java.awt.Rectangle
+import java.awt.Component
+import java.awt.Container
+import java.awt.Color
+import java.awt.event.InputEvent
+import java.awt.event.MouseEvent
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 import javax.swing.JWindow
@@ -50,6 +58,34 @@ private fun fullAtlasPng(): ByteArray {
     val out = ByteArrayOutputStream()
     check(ImageIO.write(BufferedImage(1536, 1872, BufferedImage.TYPE_INT_ARGB), "png", out))
     return out.toByteArray()
+}
+
+private fun visibleCenterAtlasPng(): ByteArray {
+    val image = BufferedImage(1536, 1872, BufferedImage.TYPE_INT_ARGB)
+    val graphics = image.createGraphics()
+    try {
+        graphics.color = Color.RED
+        for (row in 0 until 9) for (column in 0 until 8) {
+            graphics.fillRect(column * 192 + 64, row * 208 + 64, 64, 64)
+        }
+    } finally {
+        graphics.dispose()
+    }
+    return ByteArrayOutputStream().also { check(ImageIO.write(image, "png", it)) }.toByteArray()
+}
+
+private fun Component.descendants(): List<Component> =
+    listOf(this) + if (this is Container) components.flatMap { it.descendants() } else emptyList()
+
+private fun JWindow.paintContent(): BufferedImage = onSwingEdt {
+    BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB).also { image ->
+        val graphics = image.createGraphics()
+        try {
+            contentPane.printAll(graphics)
+        } finally {
+            graphics.dispose()
+        }
+    }
 }
 
 private class FakeJvmWindow : JvmOverlayWindow {
@@ -238,6 +274,80 @@ class PetHostJvmTest {
         assertFalse(SwingUtilities.isEventDispatchThread())
         window.dispose()
         assertFalse(onSwingEdt { window.windowRef()!!.isDisplayable })
+    }
+
+    @Test
+    fun overlayCompositesPetPixelsWithTransparentCorners() {
+        if (GraphicsEnvironment.isHeadless()) return
+        runComposeUiTest {
+            val prior = onSwingEdt { Window.getWindows().toSet() }
+            val host = PetHostState(xDp = 200f, yDp = 200f)
+            val definition = testDefinition()
+            val atlas = visibleCenterAtlasPng()
+            setContent { PetHost(definition, atlas, host, PetHostMode.SystemOverlay) }
+            waitUntil(timeoutMillis = 10_000) { host.platformState == PetHostPlatformState.Showing }
+            val window = onSwingEdt {
+                (Window.getWindows().toSet() - prior).filterIsInstance<JWindow>().single()
+            }
+            // The real Swing composition must include the pet and preserve alpha,
+            // rather than leaving its pixels on an opaque native child surface.
+            waitUntil(timeoutMillis = 10_000) {
+                val image = window.paintContent()
+                (0 until image.height).any { y ->
+                    (0 until image.width).any { x -> image.getRGB(x, y) ushr 24 != 0 }
+                }
+            }
+            val image = window.paintContent()
+            assertEquals(0, image.getRGB(0, 0) ushr 24)
+            assertEquals(0, image.getRGB(image.width - 1, image.height - 1) ushr 24)
+        }
+    }
+
+    @Test
+    fun retinaOverlayDragFollowsScreenPointsWithoutLocalCoordinateFeedback() {
+        if (GraphicsEnvironment.isHeadless()) return
+        runComposeUiTest {
+            val prior = onSwingEdt { Window.getWindows().toSet() }
+            val host = PetHostState(xDp = 200f, yDp = 200f)
+            val definition = testDefinition()
+            val atlas = visibleCenterAtlasPng()
+            setContent {
+                CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                    PetHost(definition, atlas, host, PetHostMode.SystemOverlay)
+                }
+            }
+            waitUntil(timeoutMillis = 10_000) { host.platformState == PetHostPlatformState.Showing }
+            val window = onSwingEdt {
+                (Window.getWindows().toSet() - prior).filterIsInstance<JWindow>().single()
+            }
+            assertEquals(200, onSwingEdt { window.x }, "AWT positions remain logical screen points on Retina")
+            assertEquals(PetHostDefaultPetWidthDp.toInt(), onSwingEdt { window.width })
+            val target = onSwingEdt {
+                window.contentPane.descendants().first { it.mouseMotionListeners.isNotEmpty() }
+            }
+            val startX = onSwingEdt { target.locationOnScreen.x + 30 }
+            val startY = onSwingEdt { target.locationOnScreen.y + 30 }
+            fun send(id: Int, screenX: Int, pressed: Boolean) = onSwingEdt {
+                val origin = target.locationOnScreen
+                target.dispatchEvent(MouseEvent(
+                    target, id, System.currentTimeMillis(),
+                    if (pressed) InputEvent.BUTTON1_DOWN_MASK else 0,
+                    screenX - origin.x, startY - origin.y, screenX, startY,
+                    1, false, if (id == MouseEvent.MOUSE_DRAGGED) MouseEvent.NOBUTTON else MouseEvent.BUTTON1,
+                ))
+            }
+            send(MouseEvent.MOUSE_PRESSED, startX, true)
+            send(MouseEvent.MOUSE_DRAGGED, startX + 100, true)
+            waitUntil(timeoutMillis = 5_000) { onSwingEdt { window.x == 300 } }
+            send(MouseEvent.MOUSE_DRAGGED, startX + 150, true)
+            waitUntil(timeoutMillis = 5_000) { onSwingEdt { window.x == 350 } }
+            send(MouseEvent.MOUSE_RELEASED, startX + 150, false)
+            waitForIdle()
+            assertEquals(350, onSwingEdt { window.x })
+            assertEquals(200, onSwingEdt { window.y })
+            assertEquals(350f, host.xDp)
+            assertEquals(200f, host.yDp)
+        }
     }
 
     @Test
