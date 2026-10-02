@@ -1,8 +1,9 @@
 # Codex V2 support implementation evidence
 
-Date: 2026-10-02. Status: core and IO independently reviewed; shared example
-and documentation implemented, awaiting their independent reviews and final
-platform acceptance. Confidence: high in the automated results below.
+Date: 2026-10-02. Status: **PASS WITH P2**. All three implementation tasks
+passed independent specification and code-quality reviews; the final whole-feature
+review approved the change. Confidence: high in the automated and directly
+observed results below. Desktop acceptance is explicitly user-confirmed.
 
 ## Scope and evidence boundaries
 
@@ -48,6 +49,10 @@ quality, and does not claim official Desktop-equivalent validation.
   messages retain full typed V2 reports, unsuccessful imports never add pets,
   and existing definition-derived actions/player/host handle the look keys.
   Platform picker, gallery UI and host implementations are unchanged.
+
+Shared implementation/docs commit: `f0ba0fcab4ece3024ec5d9638ca6e88c41ce9346`.
+This is the tested code HEAD for platform acceptance. The subsequent acceptance
+report commit changes documentation only.
 
 Exact current Kodee assets used in tests:
 
@@ -109,9 +114,41 @@ Built artifacts:
 
 ## Platform acceptance and remaining checks
 
-Actual V2 desktop/Android picker → preview → Add → standard/look actions and
-floating host acceptance are pending the coordinating agent's direct checks.
-The iOS app build is also pending a sequential Xcode run after Gradle.
+Desktop: launched the rebuilt app from the artifact path above. Automation
+observed an imported **Clawd Chef** with standard actions and `Look 000`
+through `Look 090` visible in the existing action row. The user explicitly
+confirmed **“All four work”** for import, standard animations, look poses and
+floating pet. Exact selected desktop manifest/sheet paths were not supplied;
+this is user acceptance, not a claim of an independently inspected package.
+
+Android: installed the rebuilt APK on `emulator-5554` (API 36.1). Actual file
+pickers selected `/sdcard/Download/PetsV2Kodee/pet.json` (`msf:182`) and
+`spritesheet.webp` (`msf:180`), copied from the exact original Kodee assets.
+The dialog showed a Kodee preview and enabled Add; Add succeeded and the pager
+exposed standard and look actions. Selected Jumping; the later screenshot
+shows its idle fallback, so this single screenshot is not a continuous timing
+measurement. Selected `Look 000` and opened the floating pet, then scrolled
+the action row and selected `Look 090`. Visually inspected screenshots show
+the expected upward and rightward eyes in both the gallery and transparent
+floating surface. Closed the test overlay and verified Open pet returned.
+All sixteen indices/held playback are covered by JVM/Native tests; the direct
+Android check samples two poses rather than claiming sixteen manual checks.
+
+Screenshots (local verification artifacts):
+
+- `/tmp/pets-v2-android-jumping.png`
+- `/tmp/pets-v2-android-look-up-overlay.png`
+- `/tmp/pets-v2-android-look-right-overlay.png`
+
+Sequential iOS app build after Gradle exited 0 with **BUILD SUCCEEDED**:
+
+```sh
+rtk proxy xcodebuild -project example/iosApp/iosApp.xcodeproj -scheme iosApp \
+  -configuration Debug \
+  -destination 'platform=iOS Simulator,id=79BF70F8-7FD9-4B15-95C5-3D83BC8E8920' \
+  -derivedDataPath /tmp/pets-codex-v2-ios-derived CODE_SIGNING_ALLOWED=NO build
+```
+
 Direct iOS picker interaction, downloaded `.codex-pet` transport and physical
 multi-monitor behavior remain unverified. ZIP tests prove the explicit ZIP API,
 not the format of an unavailable downloaded container.
@@ -119,5 +156,6 @@ not the format of an unavailable downloaded container.
 Prior V1 evidence is kept separate: the user confirmed desktop V1 checks;
 direct Android V1 pickers imported the committed fixture, selected Hello and
 opened its floating surface. `/tmp/pets-v1-android-codex.png` records the test
-marker in gallery and transparent floating host. Exact V2 files were staged
-and indexed in `/sdcard/Download/PetsV2Kodee`; staging alone is not acceptance.
+marker in gallery and transparent floating host. Existing generic Android
+import also passed before the V2 extension; preservation is covered by the
+current shared tests. No publication or tags were created.
