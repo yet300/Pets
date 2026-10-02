@@ -187,13 +187,14 @@ and [audit history](docs/audit/).
 ## Future publication coordinates
 
 ```kotlin
-implementation("com.yet.pets:pets-core:<version>")
-implementation("com.yet.pets:pets-compose:<version>")
-implementation("com.yet.pets:pets-host:<version>")
+implementation("io.github.yet300.pets:pets-core:<version>")
+implementation("io.github.yet300.pets:pets-io:<version>")
+implementation("io.github.yet300.pets:pets-compose:<version>")
+implementation("io.github.yet300.pets:pets-host:<version>")
 ```
 
 IO optional:
 
 ```kotlin
-implementation("com.yet.pets:pets-io:<version>")
+implementation("io.github.yet300.pets:pets-io:<version>")
 ```
