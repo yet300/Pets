@@ -31,4 +31,4 @@ Modify shared `ImportedPet.kt` and shared import/gallery tests; update README/AP
 - [x] Route explicit V2 to new parser in the existing single preview/Add router. Retain concise errors and V2 parser reports. Use existing gallery/player/host and action-key chips; no platform-global cursor tracking.
 - [x] Run JVM and Native core/IO/example suites, ABI checks, desktop distributable and Android builds. Build iOS sequentially after Gradle.
 - [x] Verify actual desktop/Android V2 imports/actions/look poses/floating host where accessible and distinguish direct tool evidence from user confirmation. Report exact commits and unavailable checks. No publication/tagging.
-- [ ] Obtain independent spec/quality review; integrate verified work into original checkout. Preserve pre-existing untracked reports.
+- [x] Obtain independent spec/quality review; integrate verified work into original checkout. Preserve pre-existing untracked reports.

@@ -159,3 +159,15 @@ opened its floating surface. `/tmp/pets-v1-android-codex.png` records the test
 marker in gallery and transparent floating host. Existing generic Android
 import also passed before the V2 extension; preservation is covered by the
 current shared tests. No publication or tags were created.
+
+## Local integration
+
+Fast-forwarded the original checkout's `main` from `195c31e` to `877b0b9`
+(the acceptance report commit). Rechecked JVM core/IO/shared tests, both ABI
+checks, desktop distributable and Android APK in that checkout: exit 0,
+**BUILD SUCCESSFUL in 8s**, 142 tasks (20 executed, 26 from cache,
+96 up-to-date). Cached test results are distinguished from fresh executions;
+the fresh worktree suites and independent XML review are recorded above.
+The two pre-existing untracked audit reports remain untracked and their SHA-256
+hashes are unchanged. The temporary feature worktree remains available because
+the currently tested desktop app was launched from its build directory.
