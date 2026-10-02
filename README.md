@@ -1,7 +1,7 @@
 # Pets KMP
 
 A generic cross-platform animated pet runtime with explicit Codex Pets V1 and V2
-compatibility. Pre-release (`0.1.0` is not published).
+compatibility.
 
 Three different concepts (never blurred):
 
@@ -12,11 +12,6 @@ Three different concepts (never blurred):
 3. Codex V2 library profile — explicit parser/loader for the first-party
    Work Pets artwork layout; library validation policy, with observed runtime
    behavior documented separately (`docs/spec/CODEX_V2_SUPPORT_DESIGN.md`).
-
-The original `assets/kodee/pet.json` (`spriteVersionNumber=2`, 1536x2288)
-is accepted by `CodexV2PetPackageParser`. It remains rejected by the Codex V1
-adapter. The separate generic manifest `assets/kodee/pet.pets-kmp.json`
-describes the same sheet using the project-owned schema.
 
 ## Modules
 
@@ -97,7 +92,6 @@ when null. These are **library policies**, not an official Desktop-equivalent
 validator. The first-party Work Pets 0.1.6 artwork contract specifies geometry
 and clockwise pose order (and its own 20 MiB authoring cap); runtime timing
 and selection evidence come from the separately recorded Desktop research.
-See [implementation evidence](docs/audit/CODEX_V2_SUPPORT_IMPLEMENTATION.md).
 
 Generic Pets KMP v1:
 
@@ -180,9 +174,6 @@ platform capability: Android needs `SYSTEM_ALERT_WINDOW`
 (`PermissionRequired` until granted, no silent fallback); Desktop uses a small
 transparent undecorated floating window (Linux best effort); iOS reports
 `Unsupported` and never converts overlay to in-app.
-
-See [security boundaries](SECURITY.md), [architecture](docs/architecture/ARCHITECTURE.md),
-and [audit history](docs/audit/).
 
 ## Future publication coordinates
 
